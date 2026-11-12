@@ -1,2 +1,2 @@
 """analyse-bottleneck: static analysis of Claude Code transcripts (stdlib only)."""
-__version__ = "0.5.3"
+__version__ = "0.5.4"

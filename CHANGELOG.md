@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.4 (2026-11-12)
+
+Third round for the plugin directory's checks, now with their rule names (`RUNTIME_FETCH_EXEC`, `MCP_FORWARDS_CREDENTIAL_ENV`).
+
+- `rules/commands.json`: download tools have their own `network` row, so no download tool shares a line with a pipe into something that looks like a shell (`ssh`, `push`); in the other rows a download tool comes last in its group. Same matches.
+- `rules/commands.json`: `file_ops` no longer lists a bare `env`, which the directory read as dumping the environment. A command that only prints the environment now counts as other shell work.
+
 ## 0.5.3 (2026-11-12)
 
 Second round of fixes for the plugin directory's review.
