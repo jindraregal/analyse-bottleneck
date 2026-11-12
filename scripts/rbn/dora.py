@@ -1,7 +1,10 @@
-"""DORA-style delivery metrics from git history and, optionally, CI runs or a deploy log.
+"""DORA-style delivery metrics from git history and, optionally, CI runs or a deploy log you export.
 
 Nothing here is assumed to exist. Each metric says what it was computed from, and a metric
 with no source is reported as missing instead of being approximated silently:
+
+No network calls and no credentials: CI runs come only from a file you pass (--ci-runs: a JSON list
+of GitHub Actions runs you exported yourself, with the fields in CI_FIELDS; the README shows how).
 
 - deployment frequency: successful runs of a deploy workflow (regex on the workflow name),
   or a deploy log (--deploys FILE: JSONL/JSON list of {"time": epoch|ISO, "ok": bool}).
@@ -14,6 +17,7 @@ with no source is reported as missing instead of being approximated silently:
 """
 import json
 import re
+import os
 import subprocess
 import time
 from collections import defaultdict
@@ -71,16 +75,15 @@ def lead_times(repo, rows):
     return out
 
 
-def ci_runs(repo, since, limit=1000):
-    """GitHub Actions runs via the gh CLI (read-only). Returns [] when gh is missing or not authenticated."""
-    day = time.strftime("%Y-%m-%d", time.gmtime(since))
-    try:
-        out = subprocess.run(["gh", "run", "list", "-L", str(limit), "--created", ">=" + day,
-                              "--json", "workflowName,conclusion,status,headBranch,event,createdAt,startedAt,updatedAt"],
-                             cwd=repo, capture_output=True, text=True, timeout=180).stdout
-        data = json.loads(out or "[]")
-    except (OSError, ValueError, subprocess.SubprocessError):
-        return []
+CI_FIELDS = "workflowName,conclusion,status,headBranch,event,createdAt,startedAt,updatedAt"
+
+
+def load_ci_runs(path):
+    """GitHub Actions runs from a JSON file the user exported (a list of objects with CI_FIELDS)."""
+    with open(path, encoding="utf-8") as f:
+        data = json.loads(f.read() or "[]")
+    if isinstance(data, dict):
+        data = data.get("runs", [])
     runs = []
     for d in data:
         c, s, u = parse_ts(d.get("createdAt")), parse_ts(d.get("startedAt")), parse_ts(d.get("updatedAt"))
@@ -123,7 +126,7 @@ def restore_times(events):
     return out
 
 
-def run(repo, since, until=None, branch=None, use_ci=True, deploy_rx=None, deploys_path=None):
+def run(repo, since, until=None, branch=None, ci_runs_path=None, deploy_rx=None, deploys_path=None):
     until = until or time.time()
     days = max(1e-9, (until - since) / 86400.0)
     branch = branch or default_branch(repo)
@@ -141,8 +144,8 @@ def run(repo, since, until=None, branch=None, use_ci=True, deploy_rx=None, deplo
         deploys = load_deploys(deploys_path)
         deploys = [d for d in deploys if since <= d["t"] <= until]
         src = "deploy log %s" % deploys_path.rstrip("/").split("/")[-1]
-    runs = ci_runs(repo, since) if use_ci else []
-    runs = [r for r in runs if r["created"] <= until]
+    runs = load_ci_runs(ci_runs_path) if ci_runs_path else []
+    runs = [r for r in runs if since <= r["created"] <= until]
     if runs:
         dur = [r["ended"] - r["started"] for r in runs if r["concl"] not in ("skipped", "cancelled")]
         qw = [max(0.0, r["started"] - r["created"]) for r in runs]
@@ -164,7 +167,7 @@ def run(repo, since, until=None, branch=None, use_ci=True, deploy_rx=None, deplo
                      "mainline_red_to_green_h": {"p50": _q([x / 3600 for x in rest], 50), "n": len(rest)},
                      "by_workflow": sorted([{"workflow": k, "runs": v["runs"], "failed": v["failed"], "p50_min": _q([d / 60 for d in v["dur"]], 50)} for k, v in by.items()],
                                            key=lambda x: -x["runs"])[:12],
-                     "source": "GitHub Actions runs (gh run list)"}
+                     "source": "GitHub Actions runs (%s)" % os.path.basename(ci_runs_path)}
         if deploys is None:
             rx = re.compile(deploy_rx or DEPLOY_RX_DEFAULT)
             dr = [r for r in main_runs if rx.search(r["wf"])]
@@ -172,7 +175,7 @@ def run(repo, since, until=None, branch=None, use_ci=True, deploy_rx=None, deplo
                 deploys = [{"t": r["ended"], "ok": r["ok"]} for r in dr]
                 src = "CI workflows matching %s on %s" % (rx.pattern, main_name)
     else:
-        rep["missing"].append("CI runs (gh not available, not a GitHub repo, or no runs in the window)")
+        rep["missing"].append("CI runs (no --ci-runs file, or no runs in the window; export the runs with the fields %s, see the README)" % CI_FIELDS)
     if deploys:
         ok = [d for d in deploys if d["ok"]]
         m["deployment_frequency_per_day"] = {"value": round(len(ok) / days, 2), "n": len(ok), "source": src, "kind": "measured"}

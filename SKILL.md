@@ -26,7 +26,7 @@ A script does the analysis; you read its compact output and add judgement. You n
    ```
    Then re-render without re-parsing: `python3 ${CLAUDE_SKILL_DIR}/scripts/analyze.py render OUT/my-app.view.json --notes notes.json --out OUT/my-app.html`.
    Notes appear under "Do this" of their slice with an AI badge. Cite item ids and numbers from the brief; do not restate numbers you cannot point to. If a slice is mostly "Waiting — cause unknown", say so instead of guessing. Skip notes that only repeat a rule. A `headline` field is ignored.
-4. Deep dive (only when the brief has a `## Deep dive: ... [deepdive:<id>]` section, e.g. deploys took >= 10% of agent time): start ONE subagent whose prompt is the file `OUT/my-app.deepdive-<id>.md`, read-only, and tell it how to reach the platform's records read-only if you know (CI or deploy API). It returns `{"model": ..., "segments": {"deepdive:<id>": [...]}}`. Check each note against the brief's facts (or have a second subagent verify them), drop what does not hold, merge the rest into `notes.json` under the same key and re-render. Until then the page says "AI deep dive not run yet". The facts, the checks of the project's files and the coded tips are already on the page.
+4. Deep dive (only when the brief has a `## Deep dive: ... [deepdive:<id>]` section, e.g. deploys took >= 10% of agent time): start ONE subagent whose prompt is the file `OUT/my-app.deepdive-<id>.md`, read-only. It works from the brief's facts and the repo's files. Never hand it tokens, keys or logins found on this machine. If the platform's own deploy records would help (build history, deploy log), ask the user to export them to a file and give the subagent that path. It returns `{"model": ..., "segments": {"deepdive:<id>": [...]}}`. Check each note against the brief's facts (or have a second subagent verify them), drop what does not hold, merge the rest into `notes.json` under the same key and re-render. Until then the page says "AI deep dive not run yet". The facts, the checks of the project's files and the coded tips are already on the page.
 5. Answer in a few lines: the 2-3 slices that matter, the one thing to change first, and the HTML path.
 
 ## Token discipline (hard rules)
@@ -42,7 +42,7 @@ python3 ${CLAUDE_SKILL_DIR}/scripts/analyze.py --since 24h                    # 
 python3 ${CLAUDE_SKILL_DIR}/scripts/analyze.py --session latest
 python3 ${CLAUDE_SKILL_DIR}/scripts/analyze.py --project my-app --since 2026-10-01 --until 2026-10-15
 python3 ${CLAUDE_SKILL_DIR}/scripts/analyze.py calls --project my-app          # every call: duration and what it did (HTML + CSV)
-python3 ${CLAUDE_SKILL_DIR}/scripts/analyze.py dora --repo PATH --since 7d --out FILE
+python3 ${CLAUDE_SKILL_DIR}/scripts/analyze.py dora --repo PATH --since 7d --out FILE   # + --ci-runs FILE when the user exported CI runs
 python3 ${CLAUDE_SKILL_DIR}/scripts/analyze.py compare --project my-app --before "2026-10-01..2026-10-10" --after "2026-10-10.."
 ```
 

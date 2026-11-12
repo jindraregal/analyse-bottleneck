@@ -365,7 +365,7 @@ class TestForkAndDeploy(Base):
         tx = Tx("dep")
         tx.human(0)
         tx.tool(10, 910, "Bash", {"command": "git pull --rebase --autostash -q && S=$(date -u +%s) && PATH=~/bin:$PATH ops-deploy --wait; "
-                                             "V=$(curl -s https://ops.example.com/api/health | python3 -c 'print(1)'); echo live $V",
+                                             "V=$(curl -s https://ops.example.com/api/health | jq -r .version); echo live $V",
                                   "description": "Deploy main to prod"})
         tx.text(915)
         tx.write(os.path.join(self.proj, "dep.jsonl"))

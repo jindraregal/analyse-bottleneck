@@ -151,7 +151,7 @@ class TestDora(Tmp):
             git(self.repo, "commit", "-q", "-m", msg, env={"GIT_AUTHOR_DATE": "@%d +0000" % at, "GIT_COMMITTER_DATE": "@%d +0000" % ct})
 
     def test_proxies_are_labelled(self):
-        rep = dora.run(self.repo, time.time() - 86400, branch="main", use_ci=False)
+        rep = dora.run(self.repo, time.time() - 86400, branch="main")
         m = rep["metrics"]
         self.assertEqual(rep["mainline_changes"], 3)
         self.assertEqual(rep["reverts"], 1)
@@ -166,12 +166,35 @@ class TestDora(Tmp):
         with open(p, "w") as f:
             for t, ok in ((now - 5000, True), (now - 4000, False), (now - 3000, True), (now - 100, True)):
                 f.write(json.dumps({"time": t, "end": t + 240, "ok": ok}) + "\n")
-        rep = dora.run(self.repo, now - 86400, branch="main", use_ci=False, deploys_path=p)
+        rep = dora.run(self.repo, now - 86400, branch="main", deploys_path=p)
         m = rep["metrics"]
         self.assertEqual(m["deployment_frequency_per_day"]["kind"], "measured")
         self.assertEqual(m["change_failure_rate"]["value"], 0.25)
         self.assertEqual(m["deploy_duration_min"]["p50"], 4.0)
         self.assertAlmostEqual(m["time_to_restore_h"]["p50"], 0.3, places=1)
+
+    def test_ci_runs_come_only_from_an_exported_file(self):
+        rep = dora.run(self.repo, time.time() - 86400, branch="main")
+        self.assertIsNone(rep["ci"])
+        self.assertTrue(any("--ci-runs" in x for x in rep["missing"]))
+        iso = lambda t: time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(t))
+        now = time.time()
+        runs = [{"workflowName": "Deploy", "conclusion": c, "status": "completed", "headBranch": "main", "event": "push",
+                 "createdAt": iso(t), "startedAt": iso(t + 30), "updatedAt": iso(t + 330)}
+                for t, c in ((now - 7000, "success"), (now - 5000, "failure"), (now - 3000, "success"))]
+        runs.append(dict(runs[0], createdAt=iso(now - 5 * 86400), startedAt=iso(now - 5 * 86400), updatedAt=iso(now - 5 * 86400 + 60)))
+        p = os.path.join(self.tmp, "runs.json")
+        with open(p, "w") as f:
+            json.dump(runs, f)
+        rep = dora.run(self.repo, now - 86400, branch="main", ci_runs_path=p)
+        self.assertEqual(rep["ci"]["runs"], 3)  # the run before the window is left out
+        self.assertEqual(rep["ci"]["failed"], 1)
+        self.assertEqual(rep["ci"]["source"], "GitHub Actions runs (runs.json)")
+        self.assertEqual(rep["metrics"]["deployment_frequency_per_day"]["kind"], "measured")
+
+    def test_no_network_or_credential_tools_are_called(self):
+        src = open(os.path.join(os.path.dirname(dora.__file__), "dora.py"), encoding="utf-8").read()
+        self.assertNotIn('"gh"', src)
 
 
 class TestWatchOptIn(Tmp):

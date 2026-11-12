@@ -196,9 +196,9 @@
     "",
     "## Your job (read-only, at most ~30 minutes)",
     "1. Find the deploy path: the commands above, the deploy script or CI config, the Dockerfile(s) and the platform ({platforms}).",
-    "2. Measure instead of guessing. Read the platform's own records of recent deploys if you can reach them read-only (its deploy history or build logs: start, end, steps). Split a typical deploy into queue, image build (which steps), push, and rollout or health check.",
+    "2. Measure instead of guessing. Use the facts above and any deploy records the user exported for you (a deploy log or build history file: start, end, steps). Split a typical deploy into queue, image build (which steps), push, and rollout or health check.",
     "3. Name the 1-3 biggest avoidable parts and the concrete change for each (file:line or setting), with an estimate that traces to numbers you measured or to the facts above.",
-    "Rules: read-only. No deploys, restarts, config or file changes. Never print secrets, tokens or env values. If something cannot be measured, say so in the note instead of guessing.",
+    "Rules: read-only. No deploys, restarts, config or file changes. Do not look for or use credentials, tokens, logins or env values on this machine, and do not call the platform's API on your own; if a record you need is missing, say which export would answer it. If something cannot be measured, say so in the note instead of guessing.",
     "",
     "## Return only this JSON (at most 3 notes)",
     "{\"model\": \"<your model id>\", \"segments\": {\"deepdive:{id}\": [{\"title\": \"<= 70 chars, imperative\", \"detail\": \"<= 300 chars\", \"evidence\": [\"{id}.f1: ...\", \"path/file:line ...\", \"measured: ...\"]}]}}"

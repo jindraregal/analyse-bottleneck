@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.2 (2026-11-12)
+
+Fixes for the plugin directory's review.
+
+- No credentials from the user's machine: `dora` no longer calls `gh`; GitHub Actions runs come from a file you export yourself (`--ci-runs runs.json`, the JSON of `gh run list --json ...`). The deep-dive subagent works from the computed facts, the project's files and deploy records you export; it is told not to look for or use tokens, logins or env values.
+- No download-and-run commands: three tips no longer start a package that the project may not have installed, and a test fixture no longer pipes a download into an interpreter.
+- Plugin icon (`icon` in plugin.json).
+
 ## 0.5.1 (2026-11-12)
 
 Installable as a Claude Code plugin.

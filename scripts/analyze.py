@@ -82,12 +82,14 @@ def build_parser():
     add_scope(k)
     k.add_argument("--out", help="output prefix (default: ~/.local/share/analyse-bottleneck/reports/calls-<time>); writes .html and .csv")
     k.add_argument("--max-page-rows", type=int, default=12000, help="calls embedded in the HTML, longest first; the CSV keeps all")
-    d = sub.add_parser("dora", help="DORA-style delivery metrics from git (+ GitHub Actions runs, + optional deploy log); every value says if it is measured or a proxy")
+    d = sub.add_parser("dora", help="DORA-style delivery metrics from git (+ exported GitHub Actions runs, + optional deploy log); every value says if it is measured or a proxy")
     d.add_argument("--repo", required=True, help="path to a git checkout")
     d.add_argument("--since", default="7d")
     d.add_argument("--until")
     d.add_argument("--branch", help="mainline branch (default: origin/HEAD)")
-    d.add_argument("--no-ci", action="store_true", help="do not query GitHub Actions via gh")
+    d.add_argument("--ci-runs", help="JSON list of GitHub Actions runs you exported yourself "
+                   "(fields workflowName,conclusion,status,headBranch,event,createdAt,startedAt,updatedAt; see the README)")
+    d.add_argument("--no-ci", action="store_true", help=argparse.SUPPRESS)  # old flag; CI runs now come only from --ci-runs
     d.add_argument("--deploy-regex", help="workflow-name regex that marks deploy runs")
     d.add_argument("--deploys", help='deploy log: JSON list or JSONL of {"time": epoch|ISO, "ok": bool}')
     d.add_argument("--format", choices=("md", "json"), default="md")
@@ -176,7 +178,7 @@ def cmd_dora(args):
     from rbn import dora
     since = parse_when(args.since)
     until = parse_when(args.until) if args.until else None
-    rep = dora.run(os.path.abspath(args.repo), since, until, args.branch, not args.no_ci, args.deploy_regex, args.deploys)
+    rep = dora.run(os.path.abspath(args.repo), since, until, args.branch, None if args.no_ci else args.ci_runs, args.deploy_regex, args.deploys)
     if args.out:
         os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
         with open(args.out, "w", encoding="utf-8") as f:
