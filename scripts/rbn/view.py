@@ -228,11 +228,11 @@ def build_items(leaves, runs=None, vruns=None, oneoff=False, rgroups=None):
         return items
     sec = sum(lf["seconds"] for lf in leaves)
     listed = {it["_key"] for it in top_items(items, sec)}
-    cand = defaultdict(set)
+    cand = {}
     cand_s = Counter()
     for lf in leaves:
         if lf.get("scratch") and lf["key"] not in listed:
-            cand[lf["via"]].add(lf["key"])
+            cand.setdefault(lf["via"], set()).add(lf["key"])
             cand_s[lf["via"]] += lf["seconds"]
     grouped = {}
     best = _listed_s(items, sec)
@@ -319,13 +319,13 @@ def build_tasks(leaves, listed=None):
     time, biggest first; a task bigger than the smallest one picked is added (up to 2), so no hidden task is
     bigger than a shown one."""
     listed = listed or set()
-    sec, free, keys, labels = Counter(), Counter(), defaultdict(set), {}
+    sec, free, keys, labels = Counter(), Counter(), {}, {}
     for lf in leaves:
         k = _task_key(lf["via"])
         sec[k] += lf["seconds"]
         if (lf.get("_gkey") or lf["key"]) not in listed:
             free[k] += lf["seconds"]
-        keys[k].add(lf["key"])
+        keys.setdefault(k, set()).add(lf["key"])
         labels.setdefault(k, task_label(lf["via"]))
     pick = sorted((k for k in sec if sec[k] > 0), key=lambda k: (-round(free[k], 1), -sec[k], k))[:MAX_TASKS]
     if pick:

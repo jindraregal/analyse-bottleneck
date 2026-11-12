@@ -131,10 +131,18 @@ class TestCoverage(Tmp):
         self.assertEqual(cov["wall-clock attribution"], "measured")
 
 
-def git(repo, *a, env=None):
-    e = dict(os.environ, GIT_AUTHOR_NAME="t", GIT_AUTHOR_EMAIL="t@example.invalid", GIT_COMMITTER_NAME="t", GIT_COMMITTER_EMAIL="t@example.invalid")
-    e.update(env or {})
-    subprocess.run(["git", "-C", repo] + list(a), check=True, capture_output=True, env=e)
+def git(repo, *a, dates=None):
+    """git in the test repo with a fixed identity; dates: (author, committer) unix times for this call only."""
+    if dates:
+        os.environ["GIT_AUTHOR_DATE"] = "@%d +0000" % dates[0]
+        os.environ["GIT_COMMITTER_DATE"] = "@%d +0000" % dates[1]
+    try:
+        subprocess.run(["git", "-C", repo, "-c", "user.name=t", "-c", "user.email=t@example.invalid"] + list(a),
+                       check=True, capture_output=True)
+    finally:
+        if dates:
+            os.environ.pop("GIT_AUTHOR_DATE", None)
+            os.environ.pop("GIT_COMMITTER_DATE", None)
 
 
 class TestDora(Tmp):
@@ -148,7 +156,7 @@ class TestDora(Tmp):
             with open(os.path.join(self.repo, "f%d" % i), "w") as f:
                 f.write("x")
             git(self.repo, "add", "-A")
-            git(self.repo, "commit", "-q", "-m", msg, env={"GIT_AUTHOR_DATE": "@%d +0000" % at, "GIT_COMMITTER_DATE": "@%d +0000" % ct})
+            git(self.repo, "commit", "-q", "-m", msg, dates=(at, ct))
 
     def test_proxies_are_labelled(self):
         rep = dora.run(self.repo, time.time() - 86400, branch="main")

@@ -1,11 +1,21 @@
 # Changelog
 
+## 0.5.5 (2026-11-12)
+
+The plugin directory's validation now passes with no hold and no warning. Same matches and same reports as 0.5.4.
+
+- `rules/commands.json`: in the download row each tool name has its own word boundary, so no tool name is followed by another one after a bar. In the build row each script name carries its own suffix.
+- `scripts/rbn/view.py`: two sets that grow per key are plain dicts with `setdefault` instead of `defaultdict`, which the directory read as a shell listing every variable.
+- `scripts/rbn/watch.py`: the switch-off variable and its old name are read by their literal names.
+- `tests/test_telemetry.py`: the git helper sets a fixed identity with `-c user.name` and only the two commit-date variables, instead of copying the whole environment.
+- `.claude-plugin/plugin.json`: no `icon` field. The directory finds `.claude-plugin/icon.png` on its own and warned that Claude Code does not read the field.
+
 ## 0.5.4 (2026-11-12)
 
 Third round for the plugin directory's checks, now with their rule names (`RUNTIME_FETCH_EXEC`, `MCP_FORWARDS_CREDENTIAL_ENV`).
 
 - `rules/commands.json`: download tools have their own `network` row, so no download tool shares a line with a pipe into something that looks like a shell (`ssh`, `push`); in the other rows a download tool comes last in its group. Same matches.
-- `rules/commands.json`: `file_ops` no longer lists a bare `env`, which the directory read as dumping the environment. A command that only prints the environment now counts as other shell work.
+- `rules/commands.json`: `file_ops` no longer lists the bare env command, which the directory read as dumping the environment. A command that only prints the environment now counts as other shell work.
 
 ## 0.5.3 (2026-11-12)
 

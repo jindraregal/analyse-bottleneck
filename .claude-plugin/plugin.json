@@ -1,7 +1,7 @@
 {
   "name": "analyse-bottleneck",
   "displayName": "Analyse Bottleneck",
-  "version": "0.5.4",
+  "version": "0.5.5",
   "description": "Finds where the time of long Claude Code runs went (tests, builds, deploys, polling, model time, waiting for you) from local transcripts, with an HTML report and suggested fixes.",
   "author": {
     "name": "jindraregal",
@@ -16,6 +16,5 @@
     "transcripts",
     "productivity",
     "agent-skills"
-  ],
-  "icon": "./.claude-plugin/icon.png"
+  ]
 }

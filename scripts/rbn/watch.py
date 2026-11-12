@@ -14,8 +14,6 @@ import time
 from . import __version__
 from .util import fmt_dur, parse_when
 
-ENV_OFF = "ANALYSE_BOTTLENECK_WATCH"
-
 
 def state_dir():
     base = os.environ.get("XDG_STATE_HOME") or os.path.expanduser("~/.local/state")
@@ -27,7 +25,7 @@ def default_history():
 
 
 def disabled(state):
-    flag = os.environ.get(ENV_OFF) or os.environ.get("RUN_" + "BOTTLENECK_WATCH", "")  # the old name still works
+    flag = os.environ.get("ANALYSE_BOTTLENECK_WATCH") or os.environ.get("RUN_BOTTLENECK_WATCH", "")  # the old name still works
     return flag.lower() in ("0", "off", "false", "no") or os.path.exists(os.path.join(state, "disabled"))
 
 
