@@ -1,0 +1,15 @@
+{
+  "kind": "watch_thresholds",
+  "_doc": "Used by 'analyze.py watch'. A warning prints only when a threshold is crossed AND it is new or at least 25 percent worse than the last warning for the same session.",
+  "idle_gap_share_of_span": 0.15,
+  "poll_wait_share_of_autonomous": 0.10,
+  "single_tool_class_share_of_autonomous": 0.45,
+  "cache_hit_rate_min": 0.80,
+  "cache_miss_events_max": 3,
+  "oversized_results_max": 5,
+  "repeat_read_max": 6,
+  "retry_loops_max": 1,
+  "signal_counts_max": {"disk_full": 0, "oom": 0, "gpu_oom": 0, "gpu_absent": 0, "dns": 2, "network_error": 4, "rate_limit": 2, "overloaded": 2, "timeout": 3, "permission_denied_tool": 5},
+  "rule_saving_minutes_min": 3.0,
+  "min_autonomous_minutes_to_judge": 5
+}

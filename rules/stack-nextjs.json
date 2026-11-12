@@ -1,0 +1,111 @@
+{
+  "kind": "stack_rules",
+  "_doc": "Next.js findings generalised from real autonomous runs: verification by full production build, cold caches after wiping .next, heap exhaustion, repeated dev-server restarts, jobs competing for the same CPU. Fields: detector.regex runs on sanitized Bash commands (or tool results when match_target=result); evidence = thresholds that must be met; estimate = stated arithmetic inputs.",
+  "rules": [
+    {
+      "id": "next-build-as-verification",
+      "stack": "nextjs", "priority": 10,
+      "title": "Full `next build` used as a quick correctness check",
+      "detector": {"regex": "\\bnext\\s+build\\b|\\b(npm|pnpm|yarn|bun)\\s+(run\\s+)?build\\b", "exclude_regex": "docker|deploy|vercel|--profile", "requires_context": "\\bnext\\b|\\.next\\b|next\\.config"},
+      "evidence": {"min_count": 3, "min_seconds": 120},
+      "estimate": {"saving_fraction": 0.7, "assumption": "an incremental `tsc --noEmit` plus lint answers 'does it compile' in roughly 20-35% of a production build; keep one full build per ship"},
+      "confidence": "medium",
+      "why": "A production build compiles, bundles, optimises and prerenders everything. For 'did my edit break types or imports' it does far more work than needed, and it is run again and again.",
+      "fix": "Verify with an incremental typecheck and lint; run the full build only once before shipping or when build-only behaviour (routes, prerender, env) changed.",
+      "before": "npm run build   # after every small edit",
+      "after": "npx tsc --noEmit --incremental && npx next lint   # full `next build` once, at the end"
+    },
+    {
+      "id": "next-wiped-cache",
+      "stack": "nextjs", "priority": 10,
+      "title": "`.next` deleted before building, so every build is cold",
+      "detector": {"regex": "\\brm\\s+-[a-zA-Z]*[rf][a-zA-Z]*\\s+[^;&|]*\\.next\\b", "followed_by": {"regex": "\\bnext\\s+(build|dev|start)\\b|\\b(npm|pnpm|yarn|bun)\\s+(run\\s+)?(build|dev)\\b", "within_commands": 6}},
+      "evidence": {"min_count": 2, "min_seconds": 60},
+      "estimate": {"saving_fraction": 0.4, "assumption": "a warm .next cache makes the following build or dev start about 40% faster; stale-cache bugs are the exception, not the routine"},
+      "confidence": "medium",
+      "why": "Wiping the cache is a reflex against stale output, but it throws away incremental compilation work every time.",
+      "fix": "Delete .next only when a build is demonstrably stale (config, env or dependency change). Otherwise keep it, and keep it per worktree.",
+      "before": "rm -rf .next && npm run build",
+      "after": "npm run build   # rm -rf .next only after next.config / dependency changes"
+    },
+    {
+      "id": "next-webpack-explicit",
+      "stack": "nextjs", "priority": 10,
+      "title": "Next.js run with webpack explicitly",
+      "detector": {"regex": "\\bnext\\s+(dev|build)\\b[^;&|]*--webpack"},
+      "evidence": {"min_count": 2, "min_seconds": 90},
+      "estimate": {"saving_fraction": 0.4, "assumption": "Turbopack is typically 2-5x faster for dev start and incremental rebuilds; 0.4 is conservative"},
+      "confidence": "medium",
+      "why": "Webpack was chosen on purpose, yet the commands are slow enough to matter.",
+      "fix": "Try Turbopack (`--turbopack`, default in recent Next versions) unless a plugin requires webpack.",
+      "before": "next dev --webpack",
+      "after": "next dev --turbopack"
+    },
+    {
+      "id": "next-turbopack-not-used",
+      "stack": "nextjs", "priority": 10,
+      "title": "Next.js dev/build without Turbopack",
+      "detector": {"regex": "\\bnext\\s+(dev|build)\\b", "exclude_regex": "--turbo|--turbopack", "requires_context": "\\bnext\\b", "requires_absent": "--turbo|--turbopack|turbopack",
+                   "skip_if_project": {"dep_min_major": {"next": 16}}},
+      "evidence": {"min_count": 4, "min_seconds": 180},
+      "estimate": {"saving_fraction": 0.3, "assumption": "only applies to Next versions where Turbopack is opt-in; ignore on versions where it is the default"},
+      "confidence": "low",
+      "why": "On Next versions before Turbopack became the default, dev and build use webpack unless asked otherwise.",
+      "fix": "Check the Next version. If it is older than the Turbopack-default release, add --turbopack to dev (and build where supported).",
+      "before": "next dev",
+      "after": "next dev --turbopack"
+    },
+    {
+      "id": "next-heap-oom",
+      "stack": "nextjs", "priority": 10,
+      "title": "Build or dev crashed on Node heap exhaustion",
+      "detector": {"regex": "JavaScript heap out of memory|FATAL ERROR: .*(Reached heap limit|heap)|ERR_WORKER_OUT_OF_MEMORY", "match_target": "result", "require_error": true},
+      "evidence": {"min_count": 1, "min_seconds": 0},
+      "estimate": {"saving_fraction": 1.0, "assumption": "the crashed run is pure waste; a larger heap or fewer parallel jobs avoids the rerun"},
+      "confidence": "high",
+      "why": "The default Node heap is too small for the build, or several heavy jobs share the machine; the run dies and gets repeated.",
+      "fix": "Set NODE_OPTIONS=--max-old-space-size=<MB> sized to free RAM, and do not start two heavy builds side by side.",
+      "before": "next build   # dies, is rerun",
+      "after": "NODE_OPTIONS=--max-old-space-size=6144 next build"
+    },
+    {
+      "id": "next-dev-restarts",
+      "stack": "nextjs", "priority": 10,
+      "title": "Dev server started repeatedly",
+      "detector": {"regex": "\\bnext\\s+dev\\b|\\b(npm|pnpm|yarn|bun)\\s+(run\\s+)?dev\\b"},
+      "evidence": {"min_count": 4, "min_seconds": 0},
+      "estimate": {"seconds_per_event": 20, "events_minus_one": true, "event_fraction": 0.5, "assumption": "each start costs about 20 s of cold compile plus at least one turn to check it is up; keeping one server alive saves all but the first"},
+      "confidence": "medium",
+      "why": "Hot reload makes restarts unnecessary; each restart repeats cold compilation and the agent turns spent on checking readiness.",
+      "fix": "Start one dev server in the background per worktree, reuse it for curl/browser checks, restart only after config/env/dependency changes.",
+      "before": "pkill -f next; npm run dev &   # before each check",
+      "after": "npm run dev > /tmp/dev.log 2>&1 &   # once; then curl localhost:3000"
+    },
+    {
+      "id": "node-modules-per-worktree",
+      "stack": "nextjs", "priority": 10,
+      "title": "Dependencies reinstalled again and again (worktrees, fresh clones)",
+      "detector": {"regex": "\\b(npm\\s+(ci|install|i)|pnpm\\s+(i|install)|yarn(\\s+install)?|bun\\s+(i|install))\\b"},
+      "evidence": {"min_count": 4, "min_seconds": 120},
+      "estimate": {"saving_fraction": 0.6, "assumption": "a shared content-addressed store (pnpm) or --prefer-offline cache cuts repeat installs by about 60%"},
+      "confidence": "medium",
+      "why": "Every worktree or clean checkout pays a full install and stores a full copy of node_modules (also a disk problem).",
+      "fix": "Use pnpm with a shared store (hard links), or npm --prefer-offline, and only reinstall when the lockfile changed.",
+      "before": "npm ci   # in every worktree",
+      "after": "pnpm install --frozen-lockfile --prefer-offline   # shared store"
+    },
+    {
+      "id": "parallel-heavy-jobs",
+      "stack": "any",
+      "title": "Heavy jobs overlapped on one machine",
+      "detector": {"type": "signal_overlap", "classes": ["build", "test", "media_gpu", "install"], "min_overlap_seconds": 20},
+      "evidence": {"min_count": 2, "min_seconds": 60},
+      "estimate": {"saving_fraction": 0.25, "assumption": "overlapping CPU-bound jobs each run slower than alone; serialising or capping workers recovers about a quarter of the overlapped time. Inferred from tool timing only"},
+      "confidence": "low",
+      "why": "Two or more heavy commands (often from parallel agents) ran at the same time. Their durations are inflated by contention, and memory kills become more likely.",
+      "fix": "Serialise heavy jobs with a lock (flock) or a small job queue, and cap workers per job.",
+      "before": "agent A: next build   |   agent B: next build   (simultaneously)",
+      "after": "flock /tmp/heavy.lock next build   # one heavy job at a time"
+    }
+  ]
+}

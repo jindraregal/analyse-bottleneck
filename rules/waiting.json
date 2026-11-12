@@ -1,0 +1,126 @@
+{
+  "kind": "waiting",
+  "_doc": "The hatched 'Waiting for you' slice of the donut: time the main session waited on a person (timeline categories human_wait:*). 'parts' names each kind; a part with in_ring false (a parked session) is counted apart, like idle time, and not drawn. 'rules' are deterministic tips to wait on the person less; a rule fires for its part when min_count episodes (and min_questions turns that ended with a question, min_p50_s median) are there. 'for' says who acts: 'you' (the person: settings, CLAUDE.md, notifications, how tasks are handed over) or 'agent' (how the agent should behave); the page lists them apart, up to 3 each. Placeholders: {n} episodes, {total} time, {p50} median, {longest}, {q} stops that ended with a question, {q_total} their time, {top} the most frequent command or tool, {top_n} its count, {sessions}. saving = saving_fraction x saving_basis, where saving_basis is 'seconds' (the part's time, default), 'questions_s' (the time after stops that ended with a question) or 'extra_p50' ((episodes - sessions) x median: one wait per session instead of one per episode). Omit saving_fraction when there is no honest estimate; the saving is the person's waiting time, not agent time.",
+  "parts": [
+    {
+      "id": "prompt",
+      "cat": "human_wait:prompt",
+      "label": "Your next message",
+      "help": "The agent finished its turn and waited until you wrote again."
+    },
+    {
+      "id": "permission",
+      "cat": "human_wait:permission",
+      "label": "Permission prompts",
+      "help": "A quick tool sat far longer than it runs, in a session that asks for permission: inferred as a permission prompt."
+    },
+    {
+      "id": "approval",
+      "cat": "human_wait:approval",
+      "label": "Approval gate",
+      "help": "Commands run through a human-approval gate (GATE_REASON=...) waited for the approval."
+    },
+    {
+      "id": "ask",
+      "cat": "human_wait:ask",
+      "label": "Questions to you",
+      "help": "AskUserQuestion, plan approval or a request for a human."
+    },
+    {
+      "id": "away",
+      "cat": "human_wait:away",
+      "label": "Session parked",
+      "help": "The session was parked or you were marked away.",
+      "in_ring": false
+    }
+  ],
+  "rules": [
+    {
+      "id": "wait-allow-rules",
+      "part": "permission",
+      "min_count": 3,
+      "confidence": "medium",
+      "saving_fraction": 0.8,
+      "title": "Add allow-rules for commands that keep asking",
+      "why": "{n} tool calls stood still on a permission prompt ({total}, median {p50}). Each one stops the run until you click.",
+      "evidence": "{n} permission waits in {sessions}; most often {top} ({top_n}x).",
+      "before": "{top} asks for permission every time",
+      "after": "permissions.allow in .claude/settings.json lists the safe commands (the fewer-permission-prompts skill drafts the list)",
+      "assumption": "allow-rules remove most prompts; the rest are commands you want to see",
+      "for": "you"
+    },
+    {
+      "id": "wait-end-with-result",
+      "part": "prompt",
+      "min_questions": 2,
+      "confidence": "medium",
+      "title": "Tell agents which decisions they may take alone",
+      "why": "{q} of {n} stops ended with a question to you; the run waited {q_total} for those answers.",
+      "evidence": "{q} turns whose last text ends with '?', followed by your next message.",
+      "before": "'Shall I also deploy?' and the run stops until you answer",
+      "after": "a short 'decide yourself' list in CLAUDE.md (deploy or not, naming, how far to go); the agent takes the default, says so, and keeps going",
+      "for": "you",
+      "saving_basis": "questions_s",
+      "saving_fraction": 1.0,
+      "assumption": "upper bound: with a default the run goes on instead of waiting for the answer",
+      "source": "Claude Code docs, Memory (CLAUDE.md is read at the start of every session): https://code.claude.com/docs/en/memory"
+    },
+    {
+      "id": "wait-push-on-stop",
+      "part": "prompt",
+      "for": "you",
+      "min_count": 4,
+      "min_p50_s": 300,
+      "confidence": "medium",
+      "title": "Get a push on your phone when an agent stops",
+      "why": "The agent finished its turn {n} times and waited a median {p50} until you wrote again (longest {longest}).",
+      "evidence": "{n} stops in {sessions}, {total} waiting in all.",
+      "before": "you see that the agent is done only when you next look at its terminal",
+      "after": "a Stop hook (turn finished) and a Notification hook (needs your input) send a push; you answer within minutes",
+      "source": "Claude Code docs, Hooks (Stop and Notification events): https://code.claude.com/docs/en/hooks"
+    },
+    {
+      "id": "wait-queue-next",
+      "part": "prompt",
+      "min_count": 4,
+      "min_p50_s": 600,
+      "confidence": "low",
+      "title": "Give follow-up tasks and done-criteria up front",
+      "why": "The agent stopped {n} times and waited a median {p50} for your next message (longest {longest}).",
+      "evidence": "{n} stops in {sessions}, {total} waiting in all.",
+      "before": "one task per message; the agent idles until you look again",
+      "after": "the brief lists the next steps and when the work is done; a queue the agent can pull from",
+      "for": "you"
+    },
+    {
+      "id": "wait-batch-approvals",
+      "part": "approval",
+      "min_count": 3,
+      "confidence": "medium",
+      "title": "Batch gated commands into one approval",
+      "why": "{n} gated commands each waited for an approval ({total}, median {p50}); every one interrupts you.",
+      "evidence": "{n} approvals in {sessions}; most often {top} ({top_n}x).",
+      "before": "{n} separate approval requests",
+      "after": "related read-only checks in one gated command; one approval per task, not per command",
+      "for": "agent",
+      "saving_basis": "extra_p50",
+      "saving_fraction": 1.0,
+      "assumption": "one approval per session instead of one per command; each extra approval cost the median wait"
+    },
+    {
+      "id": "wait-batch-questions",
+      "part": "ask",
+      "min_count": 2,
+      "confidence": "medium",
+      "title": "Ask all open questions in one batch",
+      "why": "The agent stopped {n} times to ask you something ({total}, median {p50}).",
+      "evidence": "{n} questions or plan approvals in {sessions}; most often {top} ({top_n}x).",
+      "before": "one question, wait, another question, wait",
+      "after": "the agent collects its questions and asks them together, with a recommended default for each",
+      "for": "agent",
+      "saving_basis": "extra_p50",
+      "saving_fraction": 1.0,
+      "assumption": "one round of questions per session; each extra round cost the median wait"
+    }
+  ]
+}

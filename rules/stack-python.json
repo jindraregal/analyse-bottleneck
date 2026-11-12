@@ -1,0 +1,31 @@
+{
+  "kind": "stack_rules",
+  "rules": [
+    {
+      "id": "py-pip-vs-uv",
+      "stack": "python",
+      "title": "pip installs repeated",
+      "detector": {"regex": "\\bpip3?\\s+install\\b|\\bpython3?\\s+-m\\s+pip\\s+install\\b|\\bpython3?\\s+-m\\s+venv\\b"},
+      "evidence": {"min_count": 3, "min_seconds": 45},
+      "estimate": {"saving_fraction": 0.7, "assumption": "uv resolves and installs 5-50x faster than pip with a warm cache; 0.7 is conservative"},
+      "confidence": "medium",
+      "why": "pip resolves and installs serially and rebuilds wheels.",
+      "fix": "Use uv (uv venv, uv pip install, uv sync, or `uv run --with pkg`).",
+      "before": "python -m venv .venv && pip install -r requirements.txt",
+      "after": "uv venv && uv pip install -r requirements.txt"
+    },
+    {
+      "id": "py-full-pytest",
+      "stack": "python",
+      "title": "Whole pytest suite rerun after small edits",
+      "detector": {"regex": "\\bpytest\\b|python3?\\s+-m\\s+pytest", "exclude_regex": "::|\\s-k\\s|--lf|--last-failed|--ff|-x\\b|tests?/[\\w/.-]+\\.py|--testmon|-m\\s"},
+      "evidence": {"min_count": 4, "min_seconds": 180},
+      "estimate": {"saving_fraction": 0.6, "assumption": "running only failed/affected tests is typically 3-10x cheaper than the full suite"},
+      "confidence": "medium",
+      "why": "The same full suite is the feedback loop for every edit.",
+      "fix": "Loop with --lf / -k / the one file, add -x and -n auto (xdist), run the full suite once at the end.",
+      "before": "pytest",
+      "after": "pytest --lf -x   # then pytest -n auto once at the end"
+    }
+  ]
+}

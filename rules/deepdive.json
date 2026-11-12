@@ -1,0 +1,209 @@
+{
+ "kind": "deepdive",
+ "_doc": "Deep dives (view command): when one cause takes a big share of agent time, a focused second analysis runs. It triggers when the matched agent time is at least min_s seconds AND (at least min_share_pct of agent time OR at least or_min_s seconds). 'match' (regex, case-insensitive) is tried on each timeline leaf's command signature ('what'), the run it waited for ('waited_for') and, for poll/deploy/network leaves, the agent's description; 'exclude' drops leaves whose command only reads or edits text about the cause (grep deploy, cat deploy.md). Every leaf of the listed 'segments' counts too. Calls matching 'run' (or segments.deploy_parts) start the thing; poll_wait calls wait for it; the rest are checks. Calls of one session less than episode_gap_s apart form one episode (one deploy and its waiting); episodes starting less than back_to_back_s after the previous one ended are back to back. 'checks' read the project's files on disk (today's state); a check with 'platforms' runs only when one of those platforms was seen in the calls, one with 'unless_platforms' only when none of them was: type file_has (ok when any of the files matches regex), order (bad when 'first' comes before 'then' in a file; when the 'then' line also matches 'minor_if' the finding is only 'minor': listed with the 'minor' text, its tip not raised), exists (bad when none of 'need' sits next to the file or at the repo root). 'tips' fire on computed facts: cond is 'fact >= number'. The 'brief' lines become OUT/<name>.deepdive-<id>.md, the prompt for the subagent that does the AI part ({...} are filled from the facts). Its notes come back in notes.json under 'deepdive:<id>'. A tip with 'same_as' is left out when that slice rule (rules/segments.json) already shows on the page. With 'same_as_share' ('fact / fact') that rule's estimate uses this measured share instead of its fixed saving_fraction (only ever lower).",
+ "deep_dives": [
+  {
+   "id": "deploys",
+   "title": "Deploy waits",
+   "icon": "deploy",
+   "min_s": 1800,
+   "min_share_pct": 10.0,
+   "segments": [
+    "deploys"
+   ],
+   "match": "deploy|coolify|cloud ?build|gcloud\\s+(?:builds|run\\s+deploy|app\\s+deploy)|\\bgh\\s+run\\s+(?:watch|view|list)|\\bgh\\s+pr\\s+checks|vercel|netlify|wrangler|flyctl|\\bfly\\s+(?:deploy|status)|railway|kubectl\\s+rollout|helm\\s+(?:upgrade|install)|argocd|rollout|release",
+   "exclude": "^(?:cat|less|more|head|tail|grep|rg|ag|sed|awk|find|fd|ls|wc|diff|vim?|nano|code|echo|printf|git\\s+(?:log|grep|show|diff|blame))\\b",
+   "run": "(?:^|[\\s;&|(])(?:\\S*/)?[\\w.]*-?deploy(?:-[\\w.]+)?(?:\\.(?:sh|py|mjs|ts))?(?=\\s|$)|/api/v1/deploy\\b|\\bcoolify\\s+deploy\\b|gcloud\\s+builds\\s+submit|gcloud\\s+(?:run|app)\\s+deploy|\\bgh\\s+workflow\\s+run\\b|\\bvercel\\b(?:\\s+\\S+)*\\s+(?:deploy|--prod)\\b|\\bfly(?:ctl)?\\s+deploy\\b|\\brailway\\s+up\\b|kubectl\\s+rollout\\s+restart|helm\\s+(?:upgrade|install)",
+   "episode_gap_s": 900,
+   "back_to_back_s": 1800,
+   "platforms": [
+    {
+     "id": "coolify",
+     "label": "Coolify",
+     "regex": "coolify"
+    },
+    {
+     "id": "cloudbuild",
+     "label": "Google Cloud Build",
+     "regex": "gcloud\\s+builds|cloudbuild|cloud build"
+    },
+    {
+     "id": "cloudrun",
+     "label": "Google Cloud Run",
+     "regex": "gcloud\\s+run\\b"
+    },
+    {
+     "id": "gha",
+     "label": "GitHub Actions",
+     "regex": "\\bgh\\s+(?:run|workflow|pr\\s+checks)\\b"
+    },
+    {
+     "id": "vercel",
+     "label": "Vercel",
+     "regex": "\\bvercel\\b"
+    },
+    {
+     "id": "netlify",
+     "label": "Netlify",
+     "regex": "\\bnetlify\\b"
+    },
+    {
+     "id": "fly",
+     "label": "Fly.io",
+     "regex": "\\bfly(?:ctl)?\\s"
+    },
+    {
+     "id": "k8s",
+     "label": "Kubernetes",
+     "regex": "\\bkubectl\\b|\\bhelm\\b|argocd"
+    },
+    {
+     "id": "script",
+     "label": "own deploy script",
+     "regex": "(?:^|[\\s/])[\\w.]*-deploy\\b|[\\w.-]*deploy[\\w.-]*\\.(?:sh|py|ts|mjs)\\b"
+    }
+   ],
+   "files": {
+    "dockerfile": "Dockerfile*|*.Dockerfile|Containerfile",
+    "cloudbuild": "cloudbuild*.y*ml",
+    "workflow": ".github/workflows/*.y*ml"
+   },
+   "checks": [
+    {
+     "id": "docker-cache-mount",
+     "type": "file_has",
+     "files": "dockerfile",
+     "regex": "--mount=type=cache",
+     "ok": "BuildKit cache mounts in {files}",
+     "bad": "No BuildKit cache mount in {files}",
+     "tip": {
+      "title": "Cache the package store in the image build",
+      "why": "Without a cache mount every image build downloads and installs all dependencies again, even when only source code changed. Cache mounts persist only on a long-lived builder (a self-hosted Coolify server); on a fresh hosted worker such as Cloud Build they stay empty, so the check is skipped there and cloudbuild-cache applies.",
+      "before": "RUN pnpm install --frozen-lockfile",
+      "after": "RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile",
+      "source": "Docker docs, Optimize cache usage in builds: https://docs.docker.com/build/cache/optimize/"
+     },
+     "unless_platforms": [
+      "cloudbuild"
+     ]
+    },
+    {
+     "id": "docker-copy-order",
+     "type": "order",
+     "files": "dockerfile",
+     "first": "^\\s*COPY\\s+(?:--\\S+\\s+)*\\.\\s+\\S+",
+     "then": "^\\s*RUN\\b.*\\b(?:npm\\s+(?:ci|install)|pnpm\\s+(?:i|install)|yarn(?:\\s+install)?\\s*$|bun\\s+install|pip\\s+install|uv\\s+sync|poetry\\s+install|bundle\\s+install|go\\s+mod\\s+download|cargo\\s+fetch)\\b",
+     "ok": "Lockfiles are copied before the sources in {files}",
+     "bad": "Sources are copied before the dependency install: {files}",
+     "minor_if": "--mount=type=cache",
+     "minor": "Sources are copied before the install ({files}), but the install has a cache mount, so a rerun only relinks packages: a small gain, not raised as advice",
+     "tip": {
+      "title": "Copy lockfiles first, install, then copy the sources",
+      "why": "COPY . . before the install step changes that layer on every source edit, so the install step runs again on every deploy (a cache mount keeps the downloads, not the install itself).",
+      "before": "COPY . .\nRUN npm ci",
+      "after": "COPY package.json package-lock.json ./\nRUN npm ci\nCOPY . .   (pnpm workspace: COPY pnpm-lock.yaml ./, RUN pnpm fetch, COPY . ., RUN pnpm install --offline)",
+      "source": "Docker docs, Optimize cache usage in builds (order your layers): https://docs.docker.com/build/cache/optimize/ ; pnpm docs, pnpm fetch: https://pnpm.io/cli/fetch"
+     }
+    },
+    {
+     "id": "dockerignore",
+     "type": "exists",
+     "files": "dockerfile",
+     "need": [
+      ".dockerignore",
+      "Dockerfile.dockerignore"
+     ],
+     "ok": ".dockerignore present",
+     "bad": "No .dockerignore next to {files}",
+     "tip": {
+      "title": "Add a .dockerignore",
+      "why": "Without it the whole directory (node_modules, .git, build output) is sent as build context on every deploy and invalidates COPY layers.",
+      "before": "build context = whole repository",
+      "after": ".dockerignore with node_modules, .git, .next, dist, coverage",
+      "source": "Docker docs, Build context (.dockerignore): https://docs.docker.com/build/concepts/context/#dockerignore-files"
+     }
+    },
+    {
+     "id": "cloudbuild-cache",
+     "type": "file_has",
+     "files": "cloudbuild",
+     "regex": "--cache-from|--cache=true|kaniko|BUILDKIT_INLINE_CACHE|type=registry",
+     "ok": "Cloud Build reuses an image cache ({files})",
+     "bad": "{files} builds without --cache-from or a kaniko cache",
+     "tip": {
+      "title": "Reuse the previous image as build cache in Cloud Build",
+      "why": "Cloud Build starts each build on a fresh worker; without --cache-from (or kaniko's cache) every layer is rebuilt.",
+      "before": "docker build -t IMAGE .",
+      "after": "docker pull IMAGE:latest || true; docker build --cache-from IMAGE:latest -t IMAGE .  (or kaniko with --cache=true)",
+      "source": "Google Cloud docs, Speeding up your builds: https://cloud.google.com/build/docs/optimize-builds/speeding-up-builds"
+     },
+     "platforms": [
+      "cloudbuild"
+     ]
+    }
+   ],
+   "tips": [
+    {
+     "id": "dd-one-blocking-wait",
+     "cond": "checks_per_deploy >= 3",
+     "confidence": "medium",
+     "title": "Wait on each deploy with one blocking call",
+     "why": "Each status check is a model turn that re-reads the whole context; {checks_per_deploy} checks per deploy here. One call that polls inside the shell and exits on success or failure turns them into one turn.",
+     "evidence": "{episodes} deploys, {status_calls} status checks and poll calls, {checks_per_deploy} per deploy",
+     "before": "check status, sleep, check status … ({checks_per_deploy} turns per deploy)",
+     "after": "one call that waits: the platform's own wait (gh run watch --exit-status, gh pr checks --watch --fail-fast) or a script that polls until finished or failed and exits non-zero on failure; run it in the background (or as a Monitor) and act on its end notice",
+     "source": "GitHub CLI manual: https://cli.github.com/manual/gh_run_watch ; Claude Code docs, Tools reference (Bash run_in_background, Monitor): https://code.claude.com/docs/en/tools-reference"
+    },
+    {
+     "id": "dd-batch",
+     "cond": "back_to_back >= 2",
+     "confidence": "low",
+     "title": "Batch fixes: {back_to_back} deploys started right after the previous one",
+     "why": "A deploy that starts less than {back_to_back_min} min after the previous one ended usually ships one more small fix; each costs a full build and rollout ({episode_p50}).",
+     "evidence": "{back_to_back} of {episodes} deploys started within {back_to_back_min} min of the previous deploy's end",
+     "before": "fix, deploy, fix, deploy",
+     "after": "fix, fix, test, one deploy",
+     "same_as": "deploy-batch",
+     "same_as_share": "back_to_back / episodes",
+     "same_as_share_text": "{back_to_back} of {episodes} deploys started within {back_to_back_min} min of the previous deploy's end"
+    },
+    {
+     "id": "dd-background",
+     "cond": "foreground_long >= 2",
+     "confidence": "medium",
+     "title": "Run long deploy commands in the background",
+     "why": "{foreground_long} deploy commands blocked the agent for more than a minute in the foreground; a foreground Bash call waits up to its timeout (2 min by default) before it is moved to the background. A background run reports its end, so the agent can keep working.",
+     "evidence": "{foreground_long} foreground deploy calls over 60 s, longest {longest_run}",
+     "before": "deploy in the foreground, the agent waits",
+     "after": "deploy with run_in_background; continue; act on the end notice",
+     "source": "Claude Code docs, Tools reference (timeout and run_in_background): https://code.claude.com/docs/en/tools-reference",
+     "same_as": "deploy-background"
+    }
+   ],
+   "brief": [
+    "# Deep dive: deploy waits in {title} ({window})",
+    "",
+    "You are a subagent started by the analyse-bottleneck skill. Deploy-related work took {total} = {share} of agent time (trigger: {trigger}). Find where that time goes and what would cut it.",
+    "",
+    "## Computed facts (cite their ids)",
+    "{facts}",
+    "",
+    "## Checked on disk (today's files)",
+    "{checks}",
+    "",
+    "## Biggest matching items",
+    "{items}",
+    "",
+    "## Your job (read-only, at most ~30 minutes)",
+    "1. Find the deploy path: the commands above, the deploy script or CI config, the Dockerfile(s) and the platform ({platforms}).",
+    "2. Measure instead of guessing. Read the platform's own records of recent deploys if you can reach them read-only (its deploy history or build logs: start, end, steps). Split a typical deploy into queue, image build (which steps), push, and rollout or health check.",
+    "3. Name the 1-3 biggest avoidable parts and the concrete change for each (file:line or setting), with an estimate that traces to numbers you measured or to the facts above.",
+    "Rules: read-only. No deploys, restarts, config or file changes. Never print secrets, tokens or env values. If something cannot be measured, say so in the note instead of guessing.",
+    "",
+    "## Return only this JSON (at most 3 notes)",
+    "{\"model\": \"<your model id>\", \"segments\": {\"deepdive:{id}\": [{\"title\": \"<= 70 chars, imperative\", \"detail\": \"<= 300 chars\", \"evidence\": [\"{id}.f1: ...\", \"path/file:line ...\", \"measured: ...\"]}]}}"
+   ],
+   "or_min_s": 10800
+  }
+ ]
+}

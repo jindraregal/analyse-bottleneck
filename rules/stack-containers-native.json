@@ -1,0 +1,44 @@
+{
+  "kind": "stack_rules",
+  "rules": [
+    {
+      "id": "docker-build-no-cache",
+      "stack": "docker",
+      "title": "docker build with --no-cache",
+      "detector": {"regex": "\\bdocker\\s+(compose\\s+)?build\\b[^;&|]*--no-cache|\\bcompose\\s+up\\b[^;&|]*--force-recreate[^;&|]*--build"},
+      "evidence": {"min_count": 2, "min_seconds": 120},
+      "estimate": {"saving_fraction": 0.6, "assumption": "layer cache hits skip dependency install layers; 0.6 assumes dependency layers dominate"},
+      "confidence": "medium",
+      "why": "Every build redoes all layers, including unchanged dependency installs.",
+      "fix": "Drop --no-cache; order Dockerfile so lockfile COPY + install precede source COPY; use cache mounts.",
+      "before": "docker build --no-cache -t app .",
+      "after": "DOCKER_BUILDKIT=1 docker build -t app .   # with RUN --mount=type=cache"
+    },
+    {
+      "id": "docker-legacy-builder",
+      "stack": "docker",
+      "title": "Legacy docker builder in use",
+      "detector": {"regex": "legacy builder is deprecated|DOCKER_BUILDKIT=0|Sending build context to Docker daemon", "match_target": "result"},
+      "evidence": {"min_count": 2, "min_seconds": 0},
+      "estimate": {"saving_fraction": 0.3, "assumption": "BuildKit parallelises stages and caches better; gain depends on the Dockerfile", "seconds_per_event": 30},
+      "confidence": "medium",
+      "why": "The output says the classic builder is running, which lacks parallel stages and cache mounts.",
+      "fix": "Enable BuildKit/buildx and trim the build context with .dockerignore.",
+      "before": "docker build .   # classic builder",
+      "after": "docker buildx build .   # with .dockerignore"
+    },
+    {
+      "id": "native-cache-wiped",
+      "stack": "rust-go-jvm",
+      "title": "Build caches wiped (cargo/gradle/go)",
+      "detector": {"regex": "\\bcargo\\s+clean\\b|\\bgradlew?\\s+[^;&|]*(clean|--no-build-cache|--rerun-tasks)\\b|\\bgo\\s+clean\\s+-(cache|modcache|testcache)|\\bgo\\s+(build|test)\\b[^;&|]*\\s-a\\b|\\bmvn\\s+clean\\b", "followed_by": {"regex": "\\b(cargo|gradlew?|go|mvn)\\b", "within_commands": 4}},
+      "evidence": {"min_count": 2, "min_seconds": 60},
+      "estimate": {"saving_fraction": 0.7, "assumption": "an incremental build is commonly 3-10x faster than a clean one"},
+      "confidence": "medium",
+      "why": "Clean builds throw away incremental artefacts and the module/test cache.",
+      "fix": "Do not clean routinely; use sccache / the Gradle build cache and keep target/ and ~/.gradle between runs.",
+      "before": "cargo clean && cargo build",
+      "after": "cargo build   # with sccache; clean only on toolchain changes"
+    }
+  ]
+}

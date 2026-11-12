@@ -1,0 +1,16 @@
+{
+  "kind": "models",
+  "_doc": "APPROXIMATE relative weights for comparing token cost across models; edit to match your plan. A request's cost in 'units' = sum(tokens * weight) * tier_cost. Units are a comparison device, not money. Cache writes cost more than reads, which is why cache misses hurt.",
+  "weights": {"input": 1.0, "output": 5.0, "cache_read": 0.1, "cache_write_5m": 1.25, "cache_write_1h": 2.0},
+  "tiers": [
+    {"match": "opus", "tier": "top", "cost": 5.0},
+    {"match": "fable", "tier": "top", "cost": 5.0},
+    {"match": "sonnet", "tier": "mid", "cost": 1.0},
+    {"match": "haiku", "tier": "low", "cost": 0.3}
+  ],
+  "default_tier": {"tier": "mid", "cost": 1.0},
+  "cache_ttl_seconds": {"5m": 300, "1h": 3600},
+  "image_tokens_estimate": 1500,
+  "oversized_result_chars": 20000,
+  "chars_per_token": 4
+}

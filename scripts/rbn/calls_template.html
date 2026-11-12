@@ -1,0 +1,91 @@
+<title>Run Call Ledger</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@80,700;100,400;100,600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: an operations ledger. Summary strip, sticky filter bar, then one long table with bars scaled to the longest visible row. */
+:root{--bg:#f0f2f1;--surface:#fff;--fg:#14211d;--muted:#55645f;--line:#cfd7d3;--accent:#0a6e5c;--bar:#8fc9b9;--warn:#a44a00;
+--display:"Archivo","Segoe UI",system-ui,sans-serif;--mono:"JetBrains Mono",ui-monospace,Menlo,monospace}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1715;--surface:#17211e;--fg:#e4ece9;--muted:#93a39d;--line:#2b3834;--accent:#58c9b0;--bar:#22594c;--warn:#f0a35e;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f1715;--surface:#17211e;--fg:#e4ece9;--muted:#93a39d;--line:#2b3834;--accent:#58c9b0;--bar:#22594c;--warn:#f0a35e;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:400 .9rem/1.45 var(--display);padding-block:1.5rem 3rem;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+main{max-width:1400px;margin:0 auto;display:grid;gap:1rem;min-width:0}
+h1{font:700 clamp(1.7rem,4vw,2.5rem)/1.05 var(--display);font-stretch:80%;margin:0;text-wrap:balance}
+.intro{margin:.35rem 0 0;color:var(--muted);max-width:75ch}
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:.6rem;display:grid;gap:.6rem;border-bottom:1px solid var(--line)}
+.controls{display:flex;flex-wrap:wrap;gap:.5rem;align-items:end}
+.controls label{display:grid;gap:.15rem;font-size:.72rem;color:var(--muted);letter-spacing:.04em;text-transform:uppercase;min-width:0;flex:1 1 130px}
+.controls .q{flex:3 1 220px}
+select,input[type=search]{font:400 .9rem var(--display);color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:.4rem .5rem;width:100%;min-height:38px}
+.tabs{display:flex;gap:.25rem}
+button{font:600 .9rem var(--display);color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:.4rem .8rem;min-height:38px;cursor:pointer}
+button[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:var(--bg)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.sum{font:500 .82rem var(--mono);font-variant-numeric:tabular-nums}
+.wrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:4px;min-width:0}
+table{border-collapse:collapse;width:100%;min-width:760px}
+th{font:600 .72rem var(--display);letter-spacing:.04em;text-transform:uppercase;color:var(--muted);text-align:left;padding:.5rem .6rem;border-bottom:1px solid var(--line);white-space:nowrap}
+th[data-k]{cursor:pointer}th[aria-sort]{color:var(--accent)}
+td{padding:.45rem .6rem;border-bottom:1px solid var(--line);vertical-align:top}
+.d{font:500 .85rem var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap;min-width:92px;position:relative}
+.d i{display:block;height:3px;background:var(--bar);margin-top:3px}
+.n{font:400 .82rem var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.what{min-width:260px;max-width:560px}
+.cmd{font:400 .74rem/1.35 var(--mono);color:var(--muted);margin-top:.2rem;overflow-wrap:anywhere;white-space:pre-wrap}
+.sm{font-size:.78rem;color:var(--muted)}
+.tag{font:500 .68rem var(--mono);border:1px solid var(--line);border-radius:3px;padding:0 .3rem;white-space:nowrap;display:inline-block}
+.tag.w{color:var(--warn);border-color:var(--warn)}
+.more{justify-self:start}
+.note{color:var(--muted);font-size:.82rem;max-width:90ch}
+</style>
+<main>
+<header><h1>Run Call Ledger</h1><p class="intro" id="intro"></p></header>
+<div class="bar">
+  <div class="controls">
+    <div class="tabs"><button type="button" id="tCalls" aria-pressed="true">Every call</button><button type="button" id="tGroups" aria-pressed="false">By command shape</button></div>
+    <label class="q">Search<input type="search" id="q" placeholder="next build, rclone, a file name…"></label>
+    <label>Project<select id="fp"></select></label>
+    <label>Tool<select id="ft"></select></label>
+    <label>Class<select id="fc"></select></label>
+  </div>
+  <div class="sum" id="sum" aria-live="polite"></div>
+</div>
+<div class="wrap"><table><thead id="th"></thead><tbody id="tb"></tbody></table></div>
+<button type="button" class="more" id="more">Show 200 more</button>
+<p class="note">“What it did” is the agent's own description of the call. Items marked <span class="tag">inferred</span> come from a rule table reading the command. Durations overlap when tools or subagents run in parallel, so totals here exceed wall-clock time. Background calls last until their completion notice. Secrets are masked by pattern and commands are cut at 500 characters.</p>
+</main>
+<script>
+var D=__DATA__;
+var $=function(i){return document.getElementById(i)};
+var view='calls',lim=200,sort={calls:[1,-1],groups:[5,-1]};
+function dur(s){if(s<60)return s.toFixed(s<10?1:0)+' s';if(s<3600)return Math.floor(s/60)+' min '+Math.round(s%60)+' s';return Math.floor(s/3600)+' h '+Math.round(s%3600/60)+' min'}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function kb(n){return n>=1000?Math.round(n/1000)+'k':n}
+function opts(el,vals,all){el.innerHTML='<option value="">'+all+'</option>'+vals.map(function(v){return'<option>'+esc(v)+'</option>'}).join('')}
+function uniq(i){var s={};D.calls.forEach(function(r){s[r[i]]=1});return Object.keys(s).sort()}
+opts($('fp'),uniq(2),'All projects');opts($('ft'),uniq(5),'All tools');opts($('fc'),uniq(6),'All classes');
+$('intro').textContent=D.total_calls.toLocaleString('en')+' tool calls and model turns from '+D.sessions+' sessions, '+D.from+' to '+D.to+'. This page holds the longest '+D.shown.toLocaleString('en')+' calls (each at least '+dur(D.min_shown)+'); the CSV next to the report keeps all of them. Shape totals cover all calls.';
+var HC=[['Lasted',1],['What it did',7],['Tool',5],['Class',6],['Started',0],['Project / session',2],['Output',12],['Flags',null]];
+var HG=[['Total',5],['What it does',3],['Calls',4],['Median',6],['Longest',7],['Failed',8],['Tool',1],['Class',2]];
+function filt(){var q=$('q').value.toLowerCase(),p=$('fp').value,t=$('ft').value,c=$('fc').value;
+ if(view==='calls')return D.calls.filter(function(r){return(!p||r[2]===p)&&(!t||r[5]===t)&&(!c||r[6]===c)&&(!q||(r[7]+' '+r[9]+' '+D.sources[r[4]]+' '+r[3]).toLowerCase().indexOf(q)>=0)});
+ return D.groups.filter(function(r){return(!t||r[1]===t)&&(!c||r[2]===c)&&(!q||(r[0]+' '+r[3]).toLowerCase().indexOf(q)>=0)})}
+function draw(){var g=view==='groups',H=g?HG:HC,s=sort[view];
+ $('fp').disabled=g;
+ $('th').innerHTML='<tr>'+H.map(function(h){return'<th'+(h[1]!=null?' data-k="'+h[1]+'"':'')+(h[1]===s[0]?' aria-sort="'+(s[1]<0?'descending':'ascending')+'"':'')+'>'+h[0]+'</th>'}).join('')+'</tr>';
+ var a=filt().slice().sort(function(x,y){var u=x[s[0]],v=y[s[0]];return(u>v?1:u<v?-1:0)*s[1]});
+ var di=g?5:1,tot=a.reduce(function(n,r){return n+r[di]},0),mx=a.reduce(function(n,r){return Math.max(n,r[di])},1);
+ $('sum').textContent=a.length.toLocaleString('en')+(g?' shapes':' calls')+' · '+dur(tot)+' summed';
+ $('tb').innerHTML=a.slice(0,lim).map(function(r){var w=(r[di]/mx*100).toFixed(1)+'%';
+  if(g)return'<tr><td class="d">'+dur(r[5])+'<i style="width:'+w+'"></i></td><td class="what">'+esc(r[3])+'<div class="cmd">'+esc(r[0])+'</div></td><td class="n">'+r[4]+'</td><td class="n">'+dur(r[6])+'</td><td class="n">'+dur(r[7])+'</td><td class="n">'+r[8]+'</td><td class="sm">'+esc(r[1])+'</td><td class="sm">'+esc(r[2])+'</td></tr>';
+  var src=D.sources[r[4]];
+  return'<tr><td class="d">'+dur(r[1])+'<i style="width:'+w+'"></i></td><td class="what">'+esc(r[7])+(r[8]?'':' <span class="tag">inferred</span>')+(r[9]?'<div class="cmd">'+esc(r[9])+'</div>':'')+'</td><td class="sm">'+esc(r[5])+'</td><td class="sm">'+esc(r[6])+'</td><td class="n">'+esc(r[0])+'</td><td class="sm">'+esc(r[2])+' · '+esc(r[3])+(src!=='main'?'<br>subagent: '+esc(src):'')+'</td><td class="n">'+(r[12]?kb(r[12]):'')+'</td><td>'+r[11].map(function(f){return'<span class="tag'+(f==='background'?'':' w')+'">'+esc(f)+'</span>'}).join(' ')+(r[10]?' <span class="tag w">exit '+r[10]+'</span>':'')+'</td></tr>'}).join('');
+ $('more').hidden=a.length<=lim}
+$('th').onclick=function(e){var k=e.target.getAttribute('data-k');if(k==null)return;k=+k;var s=sort[view];if(s[0]===k)s[1]=-s[1];else{sort[view]=[k,-1]}lim=200;draw()};
+['q','fp','ft','fc'].forEach(function(i){$(i).addEventListener('input',function(){lim=200;draw()})});
+$('more').onclick=function(){lim+=200;draw()};
+function tab(v){view=v;lim=200;$('tCalls').setAttribute('aria-pressed',v==='calls');$('tGroups').setAttribute('aria-pressed',v==='groups');draw()}
+$('tCalls').onclick=function(){tab('calls')};$('tGroups').onclick=function(){tab('groups')};
+draw();
+</script>

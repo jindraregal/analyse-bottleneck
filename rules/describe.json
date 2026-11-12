@@ -1,0 +1,196 @@
+{
+  "kind": "describe",
+  "_doc": "Short human names (2-5 words) for the items of the donut's 'What exactly' list. Order of use: 1) 'specific' rules, first match wins; 2) the agent's own description of the call (Bash 'description', subagent task), cut to its first clause and at most 5 words; 3) 'fallback' rules; 4) the command's first two words. A rule matches 'regex' (case-insensitive) against the item's command ('on': 'what', default) or its label ('on': 'label'); 'segment' limits it to one slice. In 'text', {1}, {2} ... are regex groups; {1:title} capitalises, {1:words} turns _ and - into spaces, {1:desc} names the group with these same rules (e.g. what a poll waited for). Every name is cut to max_words words and max_chars characters.",
+  "max_words": 5,
+  "max_chars": 38,
+  "specific": [
+    {
+      "on": "label",
+      "regex": "^(.+?), mostly ",
+      "text": "{1}"
+    },
+    {
+      "on": "label",
+      "regex": "^one-off scripts of ",
+      "text": "One-off scripts"
+    },
+    {
+      "on": "label",
+      "regex": "^\\d+ polls waiting for (.+)$",
+      "text": "Wait for {1:desc}"
+    },
+    {
+      "on": "label",
+      "regex": "^claude-(opus|sonnet|haiku|fable)\\S* in main session",
+      "text": "{1:title}, main session"
+    },
+    {
+      "on": "label",
+      "regex": "^claude-(opus|sonnet|haiku|fable)\\S* in subagents",
+      "text": "{1:title} in subagents"
+    },
+    {
+      "regex": "^unknown model",
+      "text": "Model, name unknown"
+    },
+    {
+      "segment": "poll",
+      "regex": "COOLIFY_URL\\S*/deployments|coolify\\b.*\\bdeploy",
+      "text": "Wait for Coolify deploy"
+    },
+    {
+      "regex": "COOLIFY_URL\\S*/deployments|coolify\\b.*\\bdeploy",
+      "text": "Check Coolify deploys"
+    },
+    {
+      "regex": "COOLIFY_URL",
+      "text": "Coolify API call"
+    },
+    {
+      "regex": "\\bvitest\\b",
+      "text": "Unit tests (vitest)"
+    },
+    {
+      "regex": "\\bplaywright\\s+test\\b",
+      "text": "Browser tests (Playwright)"
+    },
+    {
+      "regex": "\\bpytest\\b",
+      "text": "Python tests (pytest)"
+    },
+    {
+      "regex": "\\bjest\\b",
+      "text": "Unit tests (jest)"
+    },
+    {
+      "regex": "^(?:pnpm|npm|yarn|bun)(?: run)? test\\s+([\\w./-]*\\w)",
+      "text": "Tests: {1}"
+    },
+    {
+      "regex": "^(?:pnpm|npm|yarn|bun)(?: run)? test\\b",
+      "text": "Whole test suite"
+    },
+    {
+      "regex": "\\btsc\\b|typescript\\d*/bin/tsc",
+      "text": "Typecheck (tsc)"
+    },
+    {
+      "regex": "\\bprettier\\b",
+      "text": "Format check (prettier)"
+    },
+    {
+      "regex": "\\beslint\\b|^(?:pnpm|npm|yarn)(?: run)? lint\\b",
+      "text": "Lint"
+    },
+    {
+      "regex": "\\bnext\\s+build\\b|^(?:pnpm|npm|yarn|bun)(?: run)? build\\b",
+      "text": "Production build"
+    },
+    {
+      "regex": "\\bnext\\s+dev\\b|^(?:pnpm|npm|yarn)(?: run)? dev\\b",
+      "text": "Dev server"
+    },
+    {
+      "regex": "^(?:npm ci|npm i(?:nstall)?|pnpm i(?:nstall)?|yarn(?: install)?|bun install|pip3? install|uv (?:sync|pip install))\\b",
+      "text": "Install dependencies"
+    },
+    {
+      "regex": "^git (?:add|commit)\\b",
+      "text": "Commit with git"
+    },
+    {
+      "regex": "^git fetch\\b",
+      "text": "Fetch from git"
+    },
+    {
+      "regex": "^git pull\\b",
+      "text": "Pull from git"
+    },
+    {
+      "regex": "^git push\\b",
+      "text": "Push with git"
+    },
+    {
+      "regex": "^git (?:clone|worktree)\\b",
+      "text": "Clone or worktree"
+    },
+    {
+      "regex": "^git (?:rebase|merge)\\b",
+      "text": "Rebase or merge"
+    },
+    {
+      "regex": "\\b([\\w-]*deploy[\\w-]*)$",
+      "text": "Deploy ({1})"
+    },
+    {
+      "regex": "^ssh\\s+(?:-\\S+\\s+)*([\\w.@-]+)",
+      "text": "SSH to {1}"
+    },
+    {
+      "regex": "^orca (?:goto|click|type|snapshot|screenshot|eval|press)\\b",
+      "text": "Drive Orca browser"
+    },
+    {
+      "regex": "^ffmpeg\\b",
+      "text": "Encode media (ffmpeg)"
+    },
+    {
+      "regex": "^rclone\\b",
+      "text": "Google Drive (rclone)"
+    },
+    {
+      "regex": "^gh (?:run|pr checks)\\b",
+      "text": "Watch GitHub CI"
+    },
+    {
+      "regex": "^docker (?:build|compose)\\b",
+      "text": "Docker build"
+    },
+    {
+      "regex": "^([A-Z][\\w-]*) ([a-z]+_[a-z_]+)$",
+      "text": "{1:words}: {2:words}"
+    }
+  ],
+  "fallback": [
+    {
+      "regex": "^git (\\w+)",
+      "text": "Git {1}"
+    },
+    {
+      "regex": "^curl\\b",
+      "text": "HTTP request (curl)"
+    },
+    {
+      "regex": "^(?:until|while) ",
+      "text": "Wait for a background job"
+    },
+    {
+      "regex": "scratchpad/([\\w.-]+)",
+      "text": "Scratch script {1}"
+    },
+    {
+      "regex": "^python3? - \\(inline|^python3? -c|\\(inline script\\)",
+      "text": "Inline script"
+    },
+    {
+      "regex": "^(?:python3?|uv run|node|bash|sh|tsx|bun)\\s+\\S*?([\\w.-]+\\.(?:py|mjs|cjs|js|ts|sh))\\b",
+      "text": "Run {1}"
+    },
+    {
+      "regex": "^\\.?\\.?/\\S*?([\\w.-]+\\.(?:sh|py|mjs|js))\\b",
+      "text": "Run {1}"
+    },
+    {
+      "regex": "^sed\\b",
+      "text": "Edit files (sed)"
+    },
+    {
+      "regex": "^orca\\b",
+      "text": "Orca command"
+    },
+    {
+      "regex": "^no tool or request open",
+      "text": "Gaps between steps"
+    }
+  ]
+}

@@ -1,0 +1,88 @@
+{
+  "kind": "stack_rules",
+  "rules": [
+    {
+      "id": "test-full-suite-vs-affected",
+      "stack": "any",
+      "title": "Whole test suite as the edit loop",
+      "detector": {"regex": "\\b(vitest|go\\s+test|cargo\\s+test|(npm|pnpm|yarn|bun)\\s+(run\\s+)?test|playwright\\s+test|mocha|rspec|phpunit)\\b", "exclude_regex": "--changed|--onlyChanged|--related|--grep|-g\\s|-t\\s|-run\\s|\\s-k\\s|--last-failed|--onlyFailures|--lf\\b|--filter|\\.(test|spec)\\.[jt]sx?|_test\\.go|\\./\\.\\.\\.\\s*-run|--bail|-p\\s+\\w+"},
+      "evidence": {"min_count": 4, "min_seconds": 180},
+      "estimate": {"saving_fraction": 0.6, "assumption": "affected-only or last-failed runs cost about 20-40% of a full run"},
+      "confidence": "medium",
+      "why": "A full suite after each edit multiplies wait time and output tokens.",
+      "fix": "Run changed/related tests while iterating (--changed, --related, -run, --last-failed, jest --onlyFailures) and the full suite once before finishing.",
+      "source": "Jest CLI docs, --onlyFailures and --bail: https://jestjs.io/docs/cli#--onlyfailures",
+      "before": "npm test",
+      "after": "npx vitest related src/changed.ts   # full suite once at the end"
+    },
+    {
+      "id": "playwright-full-rerun",
+      "stack": "playwright",
+      "title": "Playwright suite fully rerun",
+      "detector": {"regex": "\\bplaywright\\s+test\\b", "exclude_regex": "--grep|-g\\s|--last-failed|--only-changed|:\\d+|\\.spec\\.[jt]s|--project=|--shard"},
+      "evidence": {"min_count": 3, "min_seconds": 180},
+      "estimate": {"saving_fraction": 0.7, "assumption": "rerunning only failures or one spec costs about 10-30% of the full run"},
+      "confidence": "medium",
+      "why": "Browser suites are the slowest feedback loop; full reruns after a one-spec fix are mostly waste.",
+      "fix": "Use --last-failed, a single spec/line, one --project, and --workers sized to cores; full run once in CI.",
+      "before": "npx playwright test",
+      "after": "npx playwright test --last-failed --project=chromium"
+    },
+    {
+      "id": "ci-polled-by-sleep",
+      "stack": "ci",
+      "title": "CI/deploy status polled with sleep loops",
+      "detector": {"regex": "sleep\\s+\\d+[^\\n]*\\b(gh\\s+(run|pr|workflow)\\b|curl\\b[^\\n]*(pipelines?|actions/runs|check-runs|/checks\\b|buildkite|circleci))|\\bgh\\s+(run|pr)\\s+(view|list|checks)\\b[^\\n]*;\\s*sleep|\\b(until|while)\\b[^\\n]*\\bgh\\s+(run|pr)\\b", "exclude_regex": "--watch|\\b(for|while|until)\\b[^\\n]*\\bdo\\b"},
+      "evidence": {"min_count": 3, "min_seconds": 0},
+      "estimate": {"seconds_per_event": 10, "event_fraction": 0.85, "assumption": "each avoided poll saves its model turn (tokens) and on average about half the poll interval of overshoot; a blocking watch ends exactly when CI ends"},
+      "confidence": "high",
+      "why": "Every poll is a full model turn (context re-read, tokens) plus a sleep overshoot.",
+      "fix": "Block in one call: gh run watch --exit-status, or gh pr checks --watch --fail-fast.",
+      "source": "GitHub CLI manual, gh run watch and gh pr checks: https://cli.github.com/manual/gh_run_watch",
+      "before": "sleep 60; gh run view   # repeated",
+      "after": "gh run watch --exit-status"
+    },
+    {
+      "id": "format-by-hand",
+      "stack": "any",
+      "title": "Formatter run by hand after edits",
+      "detector": {"regex": "\\bprettier\\b[^\\n;&|]*\\s--write\\b|\\beslint\\b[^\\n;&|]*\\s--fix\\b|\\bruff\\s+format\\b|\\bruff\\s+check\\b[^\\n;&|]*--fix\\b|\\bblack\\s+[\\w./]|\\bbiome\\s+(?:format|check|lint)\\b[^\\n;&|]*--write\\b|\\bgofmt\\s+-w\\b|\\bcargo\\s+fmt\\b|\\b(?:npm|pnpm|yarn|bun)\\s+(?:run\\s+)?(?:format|fmt|lint:fix)\\b",
+                   "exclude_regex": "--check\\b|--diff\\b|--dry-run\\b",
+                   "skip_if_project": {"file_regex": {"files": [".claude/settings.json", ".claude/settings.local.json"], "regex": "PostToolUse"}}},
+      "evidence": {"min_count": 4, "min_seconds": 0},
+      "estimate": {"seconds_per_event": 8, "event_fraction": 1.0, "assumption": "a PostToolUse hook formats each edited file without a model turn; each avoided call saves its turn (about 8 s and one turn of tokens); the formatter's own time stays"},
+      "confidence": "medium",
+      "why": "Each formatter call is a model turn that re-reads the context, and the agent can forget it. A hook runs it after every Edit or Write.",
+      "fix": "Run the formatter from a PostToolUse hook on Edit|Write in .claude/settings.json instead of by hand.",
+      "source": "Claude Code docs, Best practices (formatter as a PostToolUse hook): https://code.claude.com/docs/en/best-practices",
+      "before": "npx prettier --write src/a.ts   # after each edit",
+      "after": "PostToolUse hook, matcher Edit|Write: npx prettier --write --ignore-unknown <edited file>"
+    },
+    {
+      "id": "git-repeated-clone",
+      "stack": "git",
+      "title": "Large repositories cloned repeatedly",
+      "detector": {"regex": "\\bgit\\s+clone\\b", "exclude_regex": "--depth|--filter|--single-branch|--reference"},
+      "evidence": {"min_count": 2, "min_seconds": 30},
+      "estimate": {"saving_fraction": 0.7, "assumption": "shallow/partial clone or `git worktree add` from an existing clone transfers a small fraction of history"},
+      "confidence": "medium",
+      "why": "Full clones re-download history and blobs that already exist locally.",
+      "fix": "Clone once, then `git worktree add` or `git fetch`; use --depth 1 --filter=blob:none for throwaway copies.",
+      "before": "git clone https://host/org/repo.git",
+      "after": "git clone --depth 1 --filter=blob:none https://host/org/repo.git   # or: git worktree add"
+    },
+    {
+      "id": "search-grep-find-vs-rg-fd",
+      "stack": "any",
+      "title": "Recursive grep/find instead of rg/fd",
+      "detector": {"regex": "(^|[;&|(]\\s*)(grep\\s+-[a-zA-Z]*[rR]|grep\\s+--recursive|find\\s+\\S+\\s+(-type\\s+\\w\\s+)?-name)", "exclude_regex": "--exclude-dir|node_modules|\\.git\\b"},
+      "evidence": {"min_count": 8, "min_seconds": 20},
+      "estimate": {"saving_fraction": 0.6, "token_fraction": 0.4, "assumption": "rg respects .gitignore and skips node_modules/.git, so it is usually several times faster and prints far less noise"},
+      "confidence": "medium",
+      "why": "Recursive grep/find walk dependency folders and build output and return noisy matches.",
+      "fix": "Use rg/fd (or the built-in Grep/Glob tools), which honour .gitignore.",
+      "before": "grep -rn \"TODO\" .",
+      "after": "rg -n \"TODO\""
+    }
+  ]
+}

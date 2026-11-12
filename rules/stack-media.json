@@ -1,0 +1,58 @@
+{
+  "kind": "stack_rules",
+  "rules": [
+    {
+      "id": "media-ffmpeg-software-encode",
+      "stack": "media",
+      "title": "ffmpeg encodes without hardware acceleration",
+      "detector": {"regex": "\\bffmpeg\\b", "exclude_regex": "-hwaccel|_nvenc|_vaapi|_qsv|videotoolbox|-c:v\\s+copy|-c\\s+copy|-vn\\b|-f\\s+null|-codec\\s+copy|-frames:v\\s+[0-9]+|-vframes\\s+[0-9]+|-f\\s+image2|-update\\s+1"},
+      "evidence": {"min_count": 3, "min_seconds": 120},
+      "estimate": {"saving_fraction": 0.5, "assumption": "NVENC/VAAPI/QSV encodes are commonly 3-10x faster than x264 software at equal quality targets; 0.5 is conservative and only valid when a GPU exists"},
+      "confidence": "low",
+      "confidence_boost": [{"context_regex": "nvidia-smi|nvenc|vaapi|/dev/dri|NVIDIA-SMI", "confidence": "medium"}],
+      "why": "Software x264/x265 uses all CPU cores for minutes per clip, and clips are re-encoded for each small change.",
+      "fix": "Use a hardware encoder if the machine has one; stream-copy (-c copy) for cuts; lower preset (-preset veryfast) and encode once at the end with a proxy (low-res) loop in between.",
+      "before": "ffmpeg -i in.mp4 -c:v libx264 -crf 18 out.mp4",
+      "after": "ffmpeg -hwaccel cuda -i in.mp4 -c:v h264_nvenc -cq 19 out.mp4"
+    },
+    {
+      "id": "media-whisper-cpu",
+      "stack": "media",
+      "title": "Speech recognition with slow reference whisper",
+      "detector": {"regex": "\\b(openai-)?whisper\\b", "exclude_regex": "faster[-_.]?whisper|whisper[-.]?cpp|whisper-cli|ggml|whisper-server|mlx|--device\\s+cuda|whisper-ctranslate2|pip\\s+install|which\\s+whisper"},
+      "evidence": {"min_count": 1, "min_seconds": 120},
+      "estimate": {"saving_fraction": 0.7, "assumption": "faster-whisper (CTranslate2, int8) is about 4x faster than reference whisper on CPU and 10x+ on GPU"},
+      "confidence": "medium",
+      "why": "The reference PyTorch implementation is the slowest option, especially on CPU.",
+      "fix": "Use faster-whisper (int8 on CPU, float16 on GPU), batch files in one process so the model loads once, and prefer a GPU host for long audio.",
+      "before": "whisper audio.mp3 --model medium",
+      "after": "faster-whisper-xxl audio.mp3 --model medium   # or python: WhisperModel('medium', compute_type='int8')"
+    },
+    {
+      "id": "media-gpu-absent-fallback",
+      "stack": "media",
+      "title": "GPU job attempted on a machine without a GPU",
+      "detector": {"regex": "CUDA is not available|No CUDA GPUs|no NVIDIA (GPU|driver)|NVIDIA-SMI has failed|nvidia-smi: command not found|Found no NVIDIA driver", "match_target": "result", "require_error": true},
+      "evidence": {"min_count": 1, "min_seconds": 0},
+      "estimate": {"saving_fraction": 1.0, "assumption": "time spent in the failed or CPU-fallback attempt is avoidable if the job is routed to a GPU host (or CPU-optimised) up front"},
+      "confidence": "high",
+      "why": "The environment has no usable GPU, so GPU-assuming commands fail or silently crawl on CPU.",
+      "fix": "Record 'no GPU here' once in the project instructions and route GPU jobs to a GPU host, or use int8/quantised CPU variants.",
+      "before": "python train.py --device cuda   # fails, then retried",
+      "after": "ssh gpu-host 'python train.py --device cuda'   # or --device cpu --compute int8"
+    },
+    {
+      "id": "web-screenshot-instead-of-snapshot",
+      "stack": "browser",
+      "title": "Screenshots used where an accessibility snapshot would do",
+      "detector": {"type": "tool_name", "regex": "screenshot", "tool_regex": "screenshot"},
+      "evidence": {"min_count": 6, "min_seconds": 0},
+      "estimate": {"token_per_event": 1500, "event_fraction": 0.5, "seconds_per_event": 2, "assumption": "an image costs about 1500 input tokens and stays in context; a text snapshot of the same page is usually cheaper and queryable; half of the screenshots are assumed replaceable"},
+      "confidence": "medium",
+      "why": "Images are expensive to carry and cannot be searched; the model needs structure, not pixels, for most browser steps.",
+      "fix": "Use the accessibility snapshot / DOM text for navigation and assertions; keep screenshots for visual checks only, at low frequency.",
+      "before": "browser_take_screenshot after every click",
+      "after": "browser_snapshot (text) after clicks; one screenshot at the end for visual QA"
+    }
+  ]
+}

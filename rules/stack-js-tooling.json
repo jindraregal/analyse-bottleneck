@@ -1,0 +1,72 @@
+{
+  "kind": "stack_rules",
+  "rules": [
+    {
+      "id": "js-npm-vs-pnpm-bun",
+      "stack": "javascript",
+      "title": "npm installs are slow and repeated",
+      "detector": {"regex": "\\bnpm\\s+(ci|install|i)\\b", "exclude_regex": "--prefer-offline",
+                   "skip_if_project": {"file_regex": {"files": [".npmrc"], "regex": "^\\s*prefer-offline\\s*=\\s*true\\b"}}},
+      "evidence": {"min_count": 3, "min_seconds": 90},
+      "estimate": {"saving_fraction": 0.5, "assumption": "pnpm or bun warm-cache installs are commonly 2-10x faster than cold npm; 0.5 is conservative"},
+      "confidence": "medium",
+      "why": "npm re-extracts every package into node_modules on each run.",
+      "fix": "Switch to pnpm or bun, or at least add --prefer-offline --no-audit --no-fund.",
+      "before": "npm install",
+      "after": "pnpm install --frozen-lockfile   # or: bun install"
+    },
+    {
+      "id": "js-webpack-vs-rspack-vite",
+      "stack": "javascript",
+      "title": "webpack builds dominate time",
+      "detector": {"regex": "\\bwebpack(-cli)?\\b|react-scripts\\s+(build|start)"},
+      "evidence": {"min_count": 3, "min_seconds": 180},
+      "estimate": {"saving_fraction": 0.5, "assumption": "rspack is a near drop-in and typically 3-10x faster; vite for new apps; 0.5 is conservative"},
+      "confidence": "low",
+      "why": "webpack is single-threaded JS; Rust bundlers parallelise and cache better.",
+      "fix": "Try rspack (drop-in config) or vite; verify plugin compatibility first.",
+      "before": "webpack --mode production",
+      "after": "rspack build   # or vite build"
+    },
+    {
+      "id": "js-jest-vs-vitest",
+      "stack": "javascript",
+      "title": "jest runs are a large share of time",
+      "detector": {"regex": "\\b(npx\\s+)?jest\\b"},
+      "evidence": {"min_count": 4, "min_seconds": 180},
+      "estimate": {"saving_fraction": 0.4, "assumption": "vitest reuses the Vite transform pipeline and is commonly 2-5x faster on large suites"},
+      "confidence": "low",
+      "why": "jest transforms every file through Babel/ts-jest and starts a heavy worker per file.",
+      "fix": "Migrate to vitest (API-compatible for most suites), or at least use --onlyChanged / --changedSince and swc transform.",
+      "before": "npx jest",
+      "after": "npx vitest run --changed"
+    },
+    {
+      "id": "js-eslint-prettier-vs-biome",
+      "stack": "javascript",
+      "title": "eslint/prettier run slowly and often",
+      "detector": {"regex": "\\b(eslint|prettier)\\b", "exclude_regex": "--cache"},
+      "evidence": {"min_count": 4, "min_seconds": 90},
+      "estimate": {"saving_fraction": 0.6, "assumption": "biome/oxlint are 10-50x faster on raw lint; --cache gives a smaller gain; 0.6 assumes partial rule parity"},
+      "confidence": "low",
+      "why": "Uncached eslint re-lints the whole tree on each call.",
+      "fix": "Add --cache, lint only changed files, or move to biome/oxlint where rules allow.",
+      "before": "npx eslint . && npx prettier --check .",
+      "after": "npx biome check --changed   # or: eslint --cache <changed files>"
+    },
+    {
+      "id": "ts-tsc-not-incremental",
+      "stack": "typescript",
+      "title": "tsc run from scratch repeatedly",
+      "detector": {"regex": "\\btsc\\b", "exclude_regex": "--incremental|\\s-b\\b|--build|--version|--init|tsc-alias|tsc-watch",
+                   "skip_if_project": {"tsconfig": {"true": ["incremental", "composite"], "artifact": "*.tsbuildinfo"}}},
+      "evidence": {"min_count": 3, "min_seconds": 60},
+      "estimate": {"saving_fraction": 0.6, "assumption": "incremental type checking typically drops repeat runs by 3-6x; tsgo (native port) is faster again"},
+      "confidence": "medium",
+      "why": "Without incremental, every call re-checks the whole project.",
+      "fix": "Enable \"incremental\": true (tsBuildInfoFile) or use --incremental; consider tsgo.",
+      "before": "npx tsc --noEmit",
+      "after": "npx tsc --noEmit --incremental   # or: npx tsgo --noEmit"
+    }
+  ]
+}

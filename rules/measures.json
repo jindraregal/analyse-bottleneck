@@ -1,0 +1,17 @@
+{
+  "kind": "measures",
+  "_doc": "Durations that tools print about themselves (dev server ready time, test-runner duration, install time, `time` output). These are MEASURED by the tool, not inferred, but only exist when the output was captured. Group 'v' is the number, optional group 'm' minutes before it, group 'u' the unit (ms, s, m, min); 'unit' is the default when the pattern has no 'u'. 'kind' groups them in the report: cold_start, build, test, install, timing.",
+  "measures": [
+    {"id": "next_ready", "kind": "cold_start", "label": "Next.js dev server ready", "regex": "Ready in (?P<v>\\d+(?:\\.\\d+)?)\\s*(?P<u>ms|s)\\b"},
+    {"id": "vite_ready", "kind": "cold_start", "label": "Vite dev server ready", "regex": "ready in\\s+(?P<v>\\d+(?:\\.\\d+)?)\\s*(?P<u>ms|s)\\b"},
+    {"id": "next_compiled", "kind": "build", "label": "Next.js compile", "regex": "Compiled successfully in (?P<v>\\d+(?:\\.\\d+)?)\\s*(?P<u>ms|s|min)\\b"},
+    {"id": "vitest_duration", "kind": "test", "label": "Vitest run", "regex": "\\n\\s*Duration\\s+(?P<v>\\d+(?:\\.\\d+)?)\\s*(?P<u>ms|s)\\b"},
+    {"id": "jest_time", "kind": "test", "label": "Jest run", "regex": "(?m)^Time:\\s+(?P<v>\\d+(?:\\.\\d+)?)\\s*(?P<u>ms|s)\\b"},
+    {"id": "pytest_time", "kind": "test", "label": "pytest run", "regex": "=+ [^=\\n]*\\b(?:passed|failed|error)[^=\\n]* in (?P<v>\\d+(?:\\.\\d+)?)s\\b", "unit": "s"},
+    {"id": "playwright_time", "kind": "test", "label": "Playwright run", "regex": "\\d+ passed \\((?P<v>\\d+(?:\\.\\d+)?)(?P<u>ms|s|m)\\)"},
+    {"id": "unittest_time", "kind": "test", "label": "Python unittest run", "regex": "Ran \\d+ tests? in (?P<v>\\d+(?:\\.\\d+)?)s", "unit": "s"},
+    {"id": "npm_install", "kind": "install", "label": "npm install", "regex": "added \\d+ packages?[^\\n]* in (?P<v>\\d+(?:\\.\\d+)?)(?P<u>ms|s|m)\\b"},
+    {"id": "pnpm_install", "kind": "install", "label": "pnpm install", "regex": "(?m)^Done in (?P<v>\\d+(?:\\.\\d+)?)(?P<u>ms|s|m)\\b"},
+    {"id": "shell_time", "kind": "timing", "label": "shell `time` (real)", "regex": "(?m)^real\\s+(?:(?P<m>\\d+)m)?(?P<v>\\d+(?:\\.\\d+)?)s", "unit": "s"}
+  ]
+}
