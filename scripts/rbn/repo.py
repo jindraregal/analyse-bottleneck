@@ -1,7 +1,7 @@
 """Read-only look at the project on disk, so a rule does not advise what the project already does.
 
 A stack rule matches command text only. Some advice is already in force through a config file ("incremental" in a
-tsconfig, also when inherited through "extends"; prefer-offline in .npmrc) or through a version (Turbopack is the
+tsconfig, also when inherited through "extends") or through a version (Turbopack is the
 default from Next 16). `detector.skip_if_project` names such checks; a matched call whose project passes one is
 dropped. When the directory of a call is unknown or gone (other machine, deleted worktree) nothing is dropped and the
 rule reports as before. Files are only read (never run), and nothing from them reaches the output except the reason.

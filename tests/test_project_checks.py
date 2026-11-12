@@ -224,20 +224,14 @@ class TestOtherProjectChecks(Proj):
     TURBO = "next-turbopack-not-used"
     FMT = "format-by-hand"
 
-    def test_npm_reported_without_npmrc_and_with_an_unrelated_one(self):
-        put(self.p(".npmrc"), "registry=https://registry.example.test/\n# prefer-offline=true\nprefer-offline=false\n")
+    def test_npm_reported_from_command_text_only(self):
         self.run_cmds(["npm install"] * 3, self.root, sec=40)
         f, chk = self.finding(self.NPM)
         self.assertIn("3 runs", f["evidence"])
-        self.assertIsNone(chk)
-
-    def test_npm_not_reported_when_npmrc_prefers_offline(self):
-        put(self.p(".npmrc"), "audit=false\nprefer-offline = true\n")
-        put(self.p("apps", "web", "package.json"), {"name": "web"})
-        self.run_cmds(["npm ci", "cd apps/web && npm install", "npm i --no-audit"], self.root, sec=40)
+        self.assertIsNone(chk)  # the project's npm config is not read: it can hold registry tokens
+        self.run_cmds(["npm ci --prefer-offline"] * 3, self.root, sid="s2", sec=40)
         f, chk = self.finding(self.NPM)
-        self.assertIsNone(f)
-        self.assertEqual(chk["reasons"], {".npmrc already sets it": 3})
+        self.assertIn("3 runs", f["evidence"])  # the flag on the command still drops those calls
 
     def test_formatter_by_hand_reported_with_its_source_unless_a_hook_runs_it(self):
         cmds = ["npx prettier --write src/a.ts", "pnpm exec eslint src --fix", "npx prettier --check .", "ruff format .", "pnpm format"]
@@ -284,7 +278,7 @@ class TestOtherProjectChecks(Proj):
     def test_every_project_check_in_the_rules_is_known(self):
         known = {name for name, _ in repo._CHECKS}
         with_checks = [r for r in RS.stack if (r.get("detector") or {}).get("skip_if_project")]
-        self.assertEqual({r["id"] for r in with_checks}, {TSC, self.NPM, self.TURBO, self.FMT})
+        self.assertEqual({r["id"] for r in with_checks}, {TSC, self.TURBO, self.FMT})
         for r in with_checks:
             self.assertTrue(set(r["detector"]["skip_if_project"]) <= known, r["id"])
 

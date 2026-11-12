@@ -236,7 +236,7 @@ class TestClassifyAndText(unittest.TestCase):
     def test_scrub_keeps_token_counts(self):
         self.assertEqual(scrub("tokens: 12345678 units x 0.5"), "tokens: 12345678 units x 0.5")
         self.assertEqual(scrub("max_tokens=500"), "max_tokens=500")
-        self.assertNotIn("abc123", scrub("GITHUB_TOKEN=ghp_abc123def456"))  # gitleaks:allow (fake test secret)
+        self.assertNotIn("abc123", scrub("MY_TOKEN=abc123"))  # fake test value
         self.assertNotIn("hunter2", scrub("api_key: hunter2"))
 
     def test_imperative_cuts_at_clause_not_colon(self):

@@ -29,9 +29,9 @@ class TestSpec(unittest.TestCase):
         run = self.spec.is_run
         for cmd in ("./deploy.sh", "bash scripts/deploy.sh prod", "app-deploy --wait", "pnpm deploy",
                     "coolify deploy uuid abc", "gcloud builds submit --config cloudbuild.yaml .",
-                    "curl -X POST $COOLIFY_URL/api/v1/deploy?uuid=x"):
+                    "curl -X POST https://coolify.example.com/api/v1/deploy?uuid=x"):
             self.assertTrue(run(cmd), cmd)
-        for cmd in ("curl -s $COOLIFY_URL/api/v1/deployments/abc", "git commit -m 'deploy fix'", "gh run watch 123"):
+        for cmd in ("curl -s https://coolify.example.com/api/v1/deployments/abc", "git commit -m 'deploy fix'", "gh run watch 123"):
             self.assertFalse(run(cmd), cmd)
 
     def test_reading_about_deploys_is_not_a_deploy(self):

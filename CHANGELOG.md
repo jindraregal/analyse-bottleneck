@@ -1,10 +1,19 @@
 # Changelog
 
+## 0.5.3 (2026-11-12)
+
+Second round of fixes for the plugin directory's review.
+
+- No download-and-run pattern in the rule files: the `poll_wait` rule that knew both a download tool and a shell started with `-c` is split into two rules (same matches).
+- No credential-shaped examples: tests and rules use literal example hosts instead of environment variables, the CI export is described in words instead of a command, and the name rules for Coolify calls match the API path instead of a variable name.
+- `js-npm-vs-pnpm-bun` no longer reads the project's npm config file (it can hold registry tokens); a `--prefer-offline` flag on the command still turns the rule off for that call.
+- Nothing in the plugin needs a credential, so it declares no `userConfig`.
+
 ## 0.5.2 (2026-11-12)
 
 Fixes for the plugin directory's review.
 
-- No credentials from the user's machine: `dora` no longer calls `gh`; GitHub Actions runs come from a file you export yourself (`--ci-runs runs.json`, the JSON of `gh run list --json ...`). The deep-dive subagent works from the computed facts, the project's files and deploy records you export; it is told not to look for or use tokens, logins or env values.
+- No credentials from the user's machine: `dora` no longer calls `gh`; GitHub Actions runs come from a file you export yourself (`--ci-runs runs.json`, a JSON list of runs). The deep-dive subagent works from the computed facts, the project's files and deploy records you export; it is told not to look for or use tokens, logins or env values.
 - No download-and-run commands: three tips no longer start a package that the project may not have installed, and a test fixture no longer pipes a download into an interpreter.
 - Plugin icon (`icon` in plugin.json).
 

@@ -23,8 +23,8 @@ class TestDescribe(unittest.TestCase):
         self.assertEqual(self.name("pnpm test site-"), "Tests: site")
         self.assertEqual(self.name("git add"), "Commit with git")
         self.assertEqual(self.name("ssh buildbox"), "SSH to buildbox")
-        self.assertEqual(self.name("curl $COOLIFY_URL/api/v1/deployments", seg="poll"), "Wait for Coolify deploy")
-        self.assertEqual(self.name("curl $COOLIFY_URL/api/v1/deployments", seg="network"), "Check Coolify deploys")
+        self.assertEqual(self.name("curl https://coolify.example.com/api/v1/deployments", seg="poll"), "Wait for Coolify deploy")
+        self.assertEqual(self.name("curl https://coolify.example.com/api/v1/deployments", seg="network"), "Check Coolify deploys")
         self.assertEqual(self.name("Acme_Corp call_tool"), "Acme Corp: call tool")
 
     def test_labels_and_agent_descriptions(self):

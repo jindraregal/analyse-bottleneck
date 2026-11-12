@@ -65,7 +65,8 @@ python3 $S/analyze.py compare --before session:abc123 --after session:def456 --p
 python3 $S/analyze.py --project my-app --since 7d --sysstat --jobs ~/.local/state/my-wrapper/jobs
 # delivery metrics, then fold them into the report
 python3 $S/analyze.py dora --repo ~/src/my-app --since 7d --out /tmp/dora.json [--ci-runs runs.json] [--deploys deploys.jsonl] [--deploy-regex 'deploy|release']
-# runs.json: gh run list -L 1000 --json workflowName,conclusion,status,headBranch,event,createdAt,startedAt,updatedAt > runs.json
+# runs.json: a JSON list of workflow runs with the fields workflowName, conclusion, status, headBranch,
+#   event, createdAt, startedAt, updatedAt (the GitHub CLI's run list with JSON output gives exactly this)
 python3 $S/analyze.py --project my-app --since 7d --dora-json /tmp/dora.json
 ```
 
@@ -109,7 +110,7 @@ Markdown goes to stdout; the full JSON is written to `~/.local/share/analyse-bot
 - **Units** are weighted token equivalents (cache read 0.1, cache write 1.25, output 5, times a model-tier factor from `rules/models.json`). They compare things; they are not money. Check the weights against your plan.
 - Time inside a request is split into thinking, generation and an `api_wait` excess (a request far slower than its output explains: retries, overload, stalls). It is a heuristic.
 - Quota findings overlap. The same turns can be polling, mechanical and batchable. Do not add them up.
-- A stack rule matches **command text**. Three rules also read the project on disk, because the advice can already be in force without showing in the command: `ts-tsc-not-incremental` (a tsconfig with `incremental` or `composite`, also through `extends` including packages and through project references, or an existing `*.tsbuildinfo`), `js-npm-vs-pnpm-bun` (`prefer-offline=true` in `.npmrc`) and `next-turbopack-not-used` (Next 16 or newer in `package.json`). The check uses the working directory recorded with each call, follows `cd`, `--filter` and `-p`, and reads the files as they are **now**, not as they were during the run. If the directory is gone (a deleted worktree or temp clone) the project's main checkout is checked instead; if nothing can be found, the rule reports as before. `meta.project_checks` in the JSON report lists what was left out and why.
+- A stack rule matches **command text**. Two rules also read the project on disk, because the advice can already be in force without showing in the command: `ts-tsc-not-incremental` (a tsconfig with `incremental` or `composite`, also through `extends` including packages and through project references, or an existing `*.tsbuildinfo`) and `next-turbopack-not-used` (Next 16 or newer in `package.json`). The check uses the working directory recorded with each call, follows `cd`, `--filter` and `-p`, and reads the files as they are **now**, not as they were during the run. If the directory is gone (a deleted worktree or temp clone) the project's main checkout is checked instead; if nothing can be found, the rule reports as before. `meta.project_checks` in the JSON report lists what was left out and why.
 
 ## Rules are data
 

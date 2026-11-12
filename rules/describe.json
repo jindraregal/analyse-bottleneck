@@ -35,15 +35,15 @@
     },
     {
       "segment": "poll",
-      "regex": "COOLIFY_URL\\S*/deployments|coolify\\b.*\\bdeploy",
+      "regex": "coolify\\S*/api/v1/deployments|coolify\\b.*\\bdeploy",
       "text": "Wait for Coolify deploy"
     },
     {
-      "regex": "COOLIFY_URL\\S*/deployments|coolify\\b.*\\bdeploy",
+      "regex": "coolify\\S*/api/v1/deployments|coolify\\b.*\\bdeploy",
       "text": "Check Coolify deploys"
     },
     {
-      "regex": "COOLIFY_URL",
+      "regex": "coolify\\S*/api/v1/",
       "text": "Coolify API call"
     },
     {
