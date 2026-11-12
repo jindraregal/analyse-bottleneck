@@ -8,7 +8,7 @@ The plugin directory's validation now passes with no hold and no warning. Same m
 - `scripts/rbn/view.py`: two sets that grow per key are plain dicts with `setdefault` instead of `defaultdict`, which the directory read as a shell listing every variable.
 - `scripts/rbn/watch.py`: the switch-off variable and its old name are read by their literal names.
 - `tests/test_telemetry.py`: the git helper sets a fixed identity with `-c user.name` and only the two commit-date variables, instead of copying the whole environment.
-- `.claude-plugin/plugin.json`: no `icon` field. The directory finds `.claude-plugin/icon.png` on its own and warned that Claude Code does not read the field.
+- `.claude-plugin/plugin.json`: no `icon` field. The directory finds the icon image next to the manifest on its own and warned that Claude Code does not read the field.
 
 ## 0.5.4 (2026-11-12)
 
