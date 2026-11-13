@@ -1,5 +1,14 @@
 # analyse-bottleneck
 
+A Claude Code skill that shows where the wall-clock time of your agent runs went (tests, builds, deploys, polling, model time, waiting for you) and ranks the fixes. Free and MIT licensed; it runs locally on the transcripts Claude Code already keeps.
+
+```bash
+npx skills add jindraregal/analyse-bottleneck            # this project
+npx skills add jindraregal/analyse-bottleneck --global   # or every project
+```
+
+Then ask Claude Code: "use analyse-bottleneck on my last 24 hours". Plugin install and other options are under [Install](#install).
+
 **Where did the time and the quota of your long autonomous Claude Code runs really go, and what do you change to make the next run faster?**
 
 `analyse-bottleneck` is a Claude Code skill plus a zero-dependency Python tool. It reads the transcripts Claude Code already writes to `~/.claude/projects`, attributes every second of wall-clock time to a cause, finds quota waste and stack-specific bad habits, and hands the model a compact report with ranked fixes: evidence, before/after commands, estimated savings with the arithmetic shown.
