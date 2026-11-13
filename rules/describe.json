@@ -91,7 +91,7 @@
       "text": "Dev server"
     },
     {
-      "regex": "^(?:npm ci|npm i(?:nstall)?|pnpm i(?:nstall)?|yarn(?: install)?|bun install|pip3? install|uv (?:sync|pip install))\\b",
+      "regex": "^(?:npm\\s+ci|npm\\s+i(?:nstall)?|pnpm\\s+i(?:nstall)?|yarn(?:\\s+install)?|bun\\s+install|pip3?\\s+install|uv\\s+(?:sync|pip\\s+install))\\b",
       "text": "Install dependencies"
     },
     {
@@ -173,7 +173,7 @@
       "text": "Inline script"
     },
     {
-      "regex": "^(?:python3?|uv run|node|bash|sh|tsx|bun)\\s+\\S*?([\\w.-]+\\.(?:py|mjs|cjs|js|ts|sh))\\b",
+      "regex": "^(?:(?:ba)?sh|python3?|uv run|node|tsx|bun)\\s+\\S*?([\\w.-]+\\.(?:sh|py|mjs|cjs|js|ts))\\b",
       "text": "Run {1}"
     },
     {

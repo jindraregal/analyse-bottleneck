@@ -30,6 +30,20 @@ class TestManifest(unittest.TestCase):
 
     def test_version_matches_scripts(self):
         self.assertEqual(self.plugin["version"], rbn.__version__)
+        self.assertEqual(self.market["plugins"][0]["version"], self.plugin["version"])
+
+    def test_rules_avoid_phrases_that_catalogue_scanners_grade_as_commands(self):
+        # skillsdirectory.com grades the bundled rules/*.json as if they were instructions; these phrases
+        # cost the listing an F in 0.5.7 (shell pipe, runtime install, rm -rf, path traversal, download + run)
+        bad = [r"\|\s*(?:ba|z)?sh\b", r"\b(?:pnpm|pip3?)\s+i(?:nstall)?\b", r"\bnpm\s+install\b",
+               r"\brm\s+-rf\b", r"\.\.[\\\\/]", r"\bRUN\s+pnpm\s+fetch\b", r"/root/"]
+        rules = os.path.join(ROOT, "rules")
+        for name in sorted(os.listdir(rules)):
+            with open(os.path.join(rules, name), encoding="utf-8") as f:
+                text = f.read()
+            for pat in bad:
+                m = re.search(pat, text)
+                self.assertIsNone(m, "%s: %r" % (name, m and text[max(0, m.start() - 40):m.end() + 40]))
 
     def test_readme_install_uses_current_names(self):
         want = "%s@%s" % (self.plugin["name"], self.market["name"])

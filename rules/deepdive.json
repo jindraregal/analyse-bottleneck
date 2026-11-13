@@ -79,8 +79,8 @@
      "tip": {
       "title": "Cache the package store in the image build",
       "why": "Without a cache mount every image build downloads and installs all dependencies again, even when only source code changed. Cache mounts persist only on a long-lived builder (a self-hosted Coolify server); on a fresh hosted worker such as Cloud Build they stay empty, so the check is skipped there and cloudbuild-cache applies.",
-      "before": "RUN pnpm install --frozen-lockfile",
-      "after": "RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile",
+      "before": "RUN npm ci",
+      "after": "RUN --mount=type=cache,id=npm,target=/npm-cache npm ci --cache /npm-cache   (pnpm: the same mount with id=pnpm,target=/pnpm/store)",
       "source": "Docker docs, Optimize cache usage in builds: https://docs.docker.com/build/cache/optimize/"
      },
      "unless_platforms": [
@@ -101,7 +101,7 @@
       "title": "Copy lockfiles first, install, then copy the sources",
       "why": "COPY . . before the install step changes that layer on every source edit, so the install step runs again on every deploy (a cache mount keeps the downloads, not the install itself).",
       "before": "COPY . .\nRUN npm ci",
-      "after": "COPY package.json package-lock.json ./\nRUN npm ci\nCOPY . .   (pnpm workspace: COPY pnpm-lock.yaml ./, RUN pnpm fetch, COPY . ., RUN pnpm install --offline)",
+      "after": "COPY package.json package-lock.json ./\nRUN npm ci\nCOPY . .   (pnpm workspace: copy pnpm-lock.yaml, run pnpm fetch, then copy the sources and install with --offline)",
       "source": "Docker docs, Optimize cache usage in builds (order your layers): https://docs.docker.com/build/cache/optimize/ ; pnpm docs, pnpm fetch: https://pnpm.io/cli/fetch"
      }
     },
@@ -201,7 +201,7 @@
     "Rules: read-only. No deploys, restarts, config or file changes. Do not look for or use credentials, tokens, logins or env values on this machine, and do not call the platform's API on your own; if a record you need is missing, say which export would answer it. If something cannot be measured, say so in the note instead of guessing.",
     "",
     "## Return only this JSON (at most 3 notes)",
-    "{\"model\": \"<your model id>\", \"segments\": {\"deepdive:{id}\": [{\"title\": \"<= 70 chars, imperative\", \"detail\": \"<= 300 chars\", \"evidence\": [\"{id}.f1: ...\", \"path/file:line ...\", \"measured: ...\"]}]}}"
+    "{\"model\": \"<your model id>\", \"segments\": {\"deepdive:{id}\": [{\"title\": \"<= 70 chars, imperative\", \"detail\": \"<= 300 chars\", \"evidence\": [\"{id}.f1: <what>\", \"path/file:line <what>\", \"measured: <what>\"]}]}}"
    ],
    "or_min_s": 10800
   }

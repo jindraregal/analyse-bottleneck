@@ -10,8 +10,8 @@
     {"id": "pytest_time", "kind": "test", "label": "pytest run", "regex": "=+ [^=\\n]*\\b(?:passed|failed|error)[^=\\n]* in (?P<v>\\d+(?:\\.\\d+)?)s\\b", "unit": "s"},
     {"id": "playwright_time", "kind": "test", "label": "Playwright run", "regex": "\\d+ passed \\((?P<v>\\d+(?:\\.\\d+)?)(?P<u>ms|s|m)\\)"},
     {"id": "unittest_time", "kind": "test", "label": "Python unittest run", "regex": "Ran \\d+ tests? in (?P<v>\\d+(?:\\.\\d+)?)s", "unit": "s"},
-    {"id": "npm_install", "kind": "install", "label": "npm install", "regex": "added \\d+ packages?[^\\n]* in (?P<v>\\d+(?:\\.\\d+)?)(?P<u>ms|s|m)\\b"},
-    {"id": "pnpm_install", "kind": "install", "label": "pnpm install", "regex": "(?m)^Done in (?P<v>\\d+(?:\\.\\d+)?)(?P<u>ms|s|m)\\b"},
+    {"id": "npm_install", "kind": "install", "label": "Install time (npm)", "regex": "added \\d+ packages?[^\\n]* in (?P<v>\\d+(?:\\.\\d+)?)(?P<u>ms|s|m)\\b"},
+    {"id": "pnpm_install", "kind": "install", "label": "Install time (pnpm)", "regex": "(?m)^Done in (?P<v>\\d+(?:\\.\\d+)?)(?P<u>ms|s|m)\\b"},
     {"id": "shell_time", "kind": "timing", "label": "shell `time` (real)", "regex": "(?m)^real\\s+(?:(?P<m>\\d+)m)?(?P<v>\\d+(?:\\.\\d+)?)s", "unit": "s"}
   ]
 }

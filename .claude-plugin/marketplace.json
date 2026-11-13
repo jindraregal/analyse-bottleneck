@@ -6,6 +6,7 @@
     {
       "name": "analyse-bottleneck",
       "source": "./",
+      "version": "0.5.8",
       "description": "Where agent time went, from local transcripts, with suggested fixes",
       "category": "observability",
       "tags": ["observability", "performance"]

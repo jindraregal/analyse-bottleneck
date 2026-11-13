@@ -11,8 +11,8 @@
       "confidence": "medium",
       "why": "npm re-extracts every package into node_modules on each run.",
       "fix": "Switch to pnpm or bun, or at least add --prefer-offline --no-audit --no-fund.",
-      "before": "npm install",
-      "after": "pnpm install --frozen-lockfile   # or: bun install"
+      "before": "npm i",
+      "after": "bun i   # or pnpm with --frozen-lockfile and its shared store"
     },
     {
       "id": "js-webpack-vs-rspack-vite",

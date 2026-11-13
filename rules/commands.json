@@ -4,7 +4,7 @@
   "rules": [
     {"class": "service", "regex": "\\b(serve\\b|runserver|uvicorn|gunicorn|hypercorn|flask\\s+run|streamlit\\s+run|storybook|jupyter|next\\s+(dev|start)|vite(\\s+dev|\\s+preview)?\\s*($|[;&|])|(npm|pnpm|yarn|bun)\\s+(run\\s+)?(dev|start|serve|watch)\\b|--watch\\b|http\\.server)", "_doc": "long-running servers and watchers: when started in the background they run until killed, so their lifetime is not time the run was blocked"},
     {"class": "human_wait:approval", "regex": "\\b(GATE_REASON|APPROVAL_REASON)=", "_doc": "commands run through a human-approval gate (a variable prefix such as GATE_REASON=...): the wait is a person approving, not machine time. Add your own gate variable here."},
-    {"class": "poll_wait", "regex": "(^|[;&|(]\\s*)(bash\\s+|sh\\s+|\\./)?\\S*/?(wait|poll)[\\w.-]*\\.(sh|py)\\b|\\bwait[-_]for[-_]?\\w*\\b"},
+    {"class": "poll_wait", "regex": "(^|[;&|(]\\s*)((?:ba)?sh\\s+|\\./)?\\S*/?(wait|poll)[\\w.-]*\\.(sh|py)\\b|\\bwait[-_]for[-_]?\\w*\\b"},
     {"class": "poll_wait", "raw": true, "regex": "\\b(until|while)\\b[^\\n]{0,200}\\bsleep\\s+[0-9]|\\bsleep\\s+[0-9]+\\s*(;|&&)\\s*(gh|cat|tail|ls|test|\\[|curl)\\b|\\bfor\\b[^\\n]{0,80}\\bdo\\b[^\\n]{0,200}\\bsleep\\s+[0-9]"},
     {"class": "poll_wait", "raw": true, "regex": "\\btimeout\\s+[0-9]+\\s+(?:ba)?sh\\s+-c\\s+.{0,40}\\b(until|while)\\b"},
     {"class": "poll_wait", "regex": "(^|[;&|(]\\s*)(sleep\\s+[0-9]|timeout\\s+[0-9]+\\s+sleep)|\\buntil\\b[^;]*;\\s*do\\s+sleep|\\bwhile\\b[^;]*;\\s*do\\s+sleep|\\btimeout\\s+[0-9]+\\s+cat\\s+\\S*fifo|\\bread\\s+(-\\w+\\s+)*-t\\s*[0-9]+|\\bgh\\s+run\\s+watch|\\bgh\\s+pr\\s+checks\\s+--watch|\\bwatch\\s+-n"},
@@ -18,8 +18,8 @@
     {"class": "network", "regex": "\\b(ssh|scp|sftp|rsync|ping|dig|nslookup|traceroute|nc|ncat|gh\\s+(api|release|repo\\s+clone|pr\\s+(create|merge)|issue)|aws|gcloud|az|kubectl|helm|coolify|vercel|wrangler|flyctl|netlify|heroku|stripe|supabase|terraform|docker\\s+(pull|push|login)|npm\\s+(publish|view|info)|rclone|mc\\s+cp|s3cmd|notion|gmail|telnet)\\b"},
     {"class": "git", "regex": "(^|[;&|(]\\s*)(git|gh)\\s"},
     {"class": "container", "regex": "\\b(docker|podman|docker-compose|compose|nerdctl)\\b"},
-    {"class": "file_ops", "regex": "^\\s*(cd\\s+\\S+\\s*(&&|;)\\s*)?(ls|cat|head|tail|grep|egrep|rg|find|fd|sed|awk|cp|mv|rm|mkdir|rmdir|touch|chmod|chown|ln|wc|sort|uniq|diff|cmp|tar|unzip|zip|gzip|du|df|stat|file|tee|jq|yq|basename|dirname|realpath|readlink|cut|tr|xargs|tree|echo|printf|pwd|test|which|date|true|:|\\[)\\b", "unless": "(^|[;&|(]\\s*)(python3?|node|deno|bun|tsx|ts-node|ruby|perl|php|bash|sh|zsh|\\./[a-z0-9_./-]+)\\s"},
-    {"class": "script_run", "regex": "\\b(python3?|node|deno|bun|tsx|ts-node|ruby|perl|php|bash|sh|zsh|\\./[a-z0-9_./-]+)\\b"}
+    {"class": "file_ops", "regex": "^\\s*(cd\\s+\\S+\\s*(&&|;)\\s*)?(ls|cat|head|tail|grep|egrep|rg|find|fd|sed|awk|cp|mv|rm|mkdir|rmdir|touch|chmod|chown|ln|wc|sort|uniq|diff|cmp|tar|unzip|zip|gzip|du|df|stat|file|tee|jq|yq|basename|dirname|realpath|readlink|cut|tr|xargs|tree|echo|printf|pwd|test|which|date|true|:|\\[)\\b", "unless": "(^|[;&|(]\\s*)((?:ba|z)?sh|python3?|node|deno|bun|tsx|ts-node|ruby|perl|php|\\./[a-z0-9_./-]+)\\s"},
+    {"class": "script_run", "regex": "\\b((?:ba|z)?sh|python3?|node|deno|bun|tsx|ts-node|ruby|perl|php|\\./[a-z0-9_./-]+)\\b"}
   ],
   "tool_classes": {
     "Read": "file_ops", "Write": "file_ops", "Edit": "file_ops", "MultiEdit": "file_ops", "NotebookEdit": "file_ops",

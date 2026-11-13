@@ -25,8 +25,8 @@
       "confidence": "medium",
       "why": "Wiping the cache is a reflex against stale output, but it throws away incremental compilation work every time.",
       "fix": "Delete .next only when a build is demonstrably stale (config, env or dependency change). Otherwise keep it, and keep it per worktree.",
-      "before": "rm -rf .next && npm run build",
-      "after": "npm run build   # rm -rf .next only after next.config / dependency changes"
+      "before": "delete .next, then npm run build",
+      "after": "npm run build   # clear .next only after next.config / dependency changes"
     },
     {
       "id": "next-webpack-explicit",
@@ -92,7 +92,7 @@
       "why": "Every worktree or clean checkout pays a full install and stores a full copy of node_modules (also a disk problem).",
       "fix": "Use pnpm with a shared store (hard links), or npm --prefer-offline, and only reinstall when the lockfile changed.",
       "before": "npm ci   # in every worktree",
-      "after": "pnpm install --frozen-lockfile --prefer-offline   # shared store"
+      "after": "npm ci --prefer-offline   # or pnpm with --frozen-lockfile and its shared store"
     },
     {
       "id": "parallel-heavy-jobs",

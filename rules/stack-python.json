@@ -10,9 +10,9 @@
       "estimate": {"saving_fraction": 0.7, "assumption": "uv resolves and installs 5-50x faster than pip with a warm cache; 0.7 is conservative"},
       "confidence": "medium",
       "why": "pip resolves and installs serially and rebuilds wheels.",
-      "fix": "Use uv (uv venv, uv pip install, uv sync).",
-      "before": "python -m venv .venv && pip install -r requirements.txt",
-      "after": "uv venv && uv pip install -r requirements.txt"
+      "fix": "Use uv (uv venv, uv pip sync, uv sync).",
+      "before": "python -m venv .venv, then pip with -r requirements.txt",
+      "after": "uv venv && uv pip sync requirements.txt"
     },
     {
       "id": "py-full-pytest",

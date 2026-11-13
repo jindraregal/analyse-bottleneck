@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.5.8 (2026-11-13)
+
+The rule files no longer read as commands to catalogue security scanners. skillsdirectory.com graded the skill F (0/100) for phrases in `rules/*.json` that the skill only looks for in transcripts and never runs. Same matches and same reports as 0.5.7.
+
+- `rules/commands.json`, `rules/describe.json`: in the patterns that recognise shell scripts, `sh`, `bash` and `zsh` come first in their group instead of after a `|`, and install commands are matched with `\s+` instead of a space. Checked against 28,726 real commands: identical matches, except that `npm  ci` with two spaces is now also named as an install.
+- Advice texts: the short form `npm i`, `npm ci` and `bun i` in the examples, `uv pip sync`, "delete .next" in words, the pnpm fetch layout in words, the Docker cache mount shown for npm with the pnpm store path next to it, install timings labelled "Install time (npm)" and "Install time (pnpm)".
+- `.claude-plugin/marketplace.json`: the plugin entry carries the version too.
+- `tests/test_manifest.py`: the marketplace version matches `plugin.json`, and the rule files contain none of the phrases the scanner flagged.
+
 ## 0.5.7 (2026-11-13)
 
 The marketplace now carries the name of its GitHub owner, so the plugin installs as `analyse-bottleneck@jindraregal`. No change to what the skill does.
