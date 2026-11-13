@@ -1,7 +1,7 @@
 {
   "name": "analyse-bottleneck",
   "displayName": "Analyse Bottleneck",
-  "version": "0.5.5",
+  "version": "0.5.6",
   "description": "Finds where the time of long Claude Code runs went (tests, builds, deploys, polling, model time, waiting for you) from local transcripts, with an HTML report and suggested fixes.",
   "author": {
     "name": "jindraregal",
@@ -10,6 +10,10 @@
   "homepage": "https://github.com/jindraregal/analyse-bottleneck",
   "repository": "https://github.com/jindraregal/analyse-bottleneck",
   "license": "MIT",
+  "privacyPolicyUrl": "https://jindraregal.com/privacy",
+  "termsOfServiceUrl": "https://jindraregal.com/terms",
+  "supportUrl": "https://github.com/jindraregal/analyse-bottleneck/issues",
+  "documentationUrl": "https://github.com/jindraregal/analyse-bottleneck#readme",
   "keywords": [
     "observability",
     "performance",

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.6 (2026-11-13)
+
+Links for the plugin directory's listing, no change to what the skill does.
+
+- `.claude-plugin/plugin.json`: privacy policy and terms of service on jindraregal.com, support through the repository's GitHub Issues, documentation in the README.
+
 ## 0.5.5 (2026-11-12)
 
 The plugin directory's validation now passes with no hold and no warning. Same matches and same reports as 0.5.4.
