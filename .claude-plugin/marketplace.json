@@ -1,5 +1,5 @@
 {
-  "name": "analyse-bottleneck",
+  "name": "jindraregal",
   "description": "Time bottleneck analysis for Claude Code runs",
   "owner": { "name": "jindraregal", "url": "https://github.com/jindraregal" },
   "plugins": [

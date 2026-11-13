@@ -71,9 +71,11 @@ class TestRulesFiles(unittest.TestCase):
                     continue
                 with open(os.path.join(base, f), encoding="utf-8", errors="ignore") as fh:
                     txt = fh.read().lower()
-                # the project's own public links and its GitHub owner (report footer, plugin manifests, install command) are allowed
+                # the project's own public links, its GitHub owner and the marketplace named after it
+                # (report footer, plugin manifests, install command) are allowed
                 for ok in ("github.com/" + "jind" + "raregal/analyse-bottleneck", "jind" + "raregal/analyse-bottleneck",
-                           "github.com/" + "jind" + "raregal", "jind" + "raregal.com", '"' + "jind" + 'raregal"'):
+                           "github.com/" + "jind" + "raregal", "jind" + "raregal.com", '"' + "jind" + 'raregal"',
+                           "analyse-bottleneck@" + "jind" + "raregal"):
                     txt = txt.replace(ok, "")
                 for b in bad:
                     self.assertNotIn(b.lower(), txt, "%s contains %s" % (f, b))

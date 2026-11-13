@@ -32,7 +32,20 @@ As a plugin, inside Claude Code:
 
 ```
 /plugin marketplace add jindraregal/analyse-bottleneck
-/plugin install analyse-bottleneck@analyse-bottleneck
+/plugin install analyse-bottleneck@jindraregal
+```
+
+The same from a shell:
+
+```bash
+claude plugin marketplace add jindraregal/analyse-bottleneck
+claude plugin install analyse-bottleneck@jindraregal
+```
+
+With the [skills CLI](https://github.com/vercel-labs/skills), which finds `SKILL.md` in the repository root:
+
+```bash
+npx skills add jindraregal/analyse-bottleneck
 ```
 
 Or as a plain skill folder:

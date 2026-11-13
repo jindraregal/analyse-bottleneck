@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.7 (2026-11-13)
+
+The marketplace now carries the name of its GitHub owner, so the plugin installs as `analyse-bottleneck@jindraregal`. No change to what the skill does.
+
+- `.claude-plugin/marketplace.json`: the new name. Installs made under the old marketplace name `analyse-bottleneck` keep updating, nothing to redo.
+- README: the install commands with the new name, the same from a shell with `claude plugin`, and installing with the skills CLI (`npx skills add jindraregal/analyse-bottleneck`).
+- `tests/test_manifest.py`: the install command in the README matches the marketplace and plugin names, and the version in `plugin.json` matches the scripts. The test for personal strings in public files allows the new install command.
+
 ## 0.5.6 (2026-11-13)
 
 Links for the plugin directory's listing, no change to what the skill does.
