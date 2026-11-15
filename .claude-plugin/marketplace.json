@@ -1,13 +1,13 @@
 {
   "name": "jindraregal",
-  "description": "Time bottleneck analysis for Claude Code runs",
+  "description": "Claude Code plugins by Jindra Regál",
   "owner": { "name": "jindraregal", "url": "https://github.com/jindraregal" },
   "plugins": [
     {
       "name": "analyse-bottleneck",
       "source": "./",
-      "version": "0.5.8",
-      "description": "Where agent time went, from local transcripts, with suggested fixes",
+      "version": "0.5.9",
+      "description": "Shows where the time and quota of your Claude Code agent runs went (tests, builds, deploys, polling, model time, waiting for you), from local transcripts, with ranked fixes.",
       "category": "observability",
       "tags": ["observability", "performance"]
     }

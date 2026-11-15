@@ -72,8 +72,8 @@ class TestRulesFiles(unittest.TestCase):
                 with open(os.path.join(base, f), encoding="utf-8", errors="ignore") as fh:
                     txt = fh.read().lower()
                 # the project's own public links, its GitHub owner and the marketplace named after it
-                # (report footer, plugin manifests, install command) are allowed
-                for ok in ("github.com/" + "jind" + "raregal/analyse-bottleneck", "jind" + "raregal/analyse-bottleneck",
+                # (report footer, plugin manifests, install command) and the author's name are allowed
+                for ok in ("jind" + "ra reg\u00e1l", "github.com/" + "jind" + "raregal/analyse-bottleneck", "jind" + "raregal/analyse-bottleneck",
                            "github.com/" + "jind" + "raregal", "jind" + "raregal.com", '"' + "jind" + 'raregal"',
                            "analyse-bottleneck@" + "jind" + "raregal"):
                     txt = txt.replace(ok, "")

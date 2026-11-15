@@ -1,13 +1,13 @@
 {
   "name": "analyse-bottleneck",
   "displayName": "Analyse Bottleneck",
-  "version": "0.5.8",
-  "description": "Finds where the time of long Claude Code runs went (tests, builds, deploys, polling, model time, waiting for you) from local transcripts, with an HTML report and suggested fixes.",
+  "version": "0.5.9",
+  "description": "Shows where the time and quota of your Claude Code agent runs went (tests, builds, deploys, polling, model time, waiting for you), from local transcripts, with ranked fixes.",
   "author": {
-    "name": "jindraregal",
-    "url": "https://github.com/jindraregal"
+    "name": "Jindra Regál",
+    "url": "https://jindraregal.com"
   },
-  "homepage": "https://github.com/jindraregal/analyse-bottleneck",
+  "homepage": "https://jindraregal.com/analyse-bottleneck",
   "repository": "https://github.com/jindraregal/analyse-bottleneck",
   "license": "MIT",
   "privacyPolicyUrl": "https://jindraregal.com/privacy",
@@ -15,8 +15,11 @@
   "supportUrl": "https://github.com/jindraregal/analyse-bottleneck/issues",
   "documentationUrl": "https://github.com/jindraregal/analyse-bottleneck#readme",
   "keywords": [
+    "claude-code",
     "observability",
     "performance",
+    "bottleneck",
+    "quota",
     "transcripts",
     "productivity",
     "agent-skills"

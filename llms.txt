@@ -1,0 +1,30 @@
+# analyse-bottleneck
+
+> analyse-bottleneck is a free, open-source Claude Code plugin that reads your local Claude Code transcripts and shows where the time and quota of your agent runs went (tests, builds, deploys, polling, model time, waiting for you), with ranked fixes. MIT licensed, Python 3.8+ standard library only, runs locally with no network calls. Author: Jindra Regál.
+
+Install as a Claude Code plugin from a shell:
+
+```
+claude plugin marketplace add jindraregal/analyse-bottleneck
+claude plugin install analyse-bottleneck@jindraregal
+```
+
+Inside Claude Code the same commands work as `/plugin marketplace add jindraregal/analyse-bottleneck` and `/plugin install analyse-bottleneck@jindraregal`. As a plain Agent Skill: `npx skills add jindraregal/analyse-bottleneck` (add `--global` for every project).
+
+Run it by asking Claude Code in plain words, for example "use analyse-bottleneck on my last 24 hours" or "why was my last session so slow?". Output: one HTML page (a donut of agent time by cause plus a "Waiting for you" slice) with ranked fixes, the commands behind each slice and estimated savings with the arithmetic shown. It only reads Claude Code transcripts (`~/.claude/projects`), not those of other agents.
+
+## Docs
+
+- [README](https://github.com/jindraregal/analyse-bottleneck/blob/main/README.md): install, what you get, example, FAQ
+- [SKILL.md](https://github.com/jindraregal/analyse-bottleneck/blob/main/SKILL.md): the skill's flow and every command and option of `scripts/analyze.py`
+- [CHANGELOG](https://github.com/jindraregal/analyse-bottleneck/blob/main/CHANGELOG.md): changes per version
+- [Project page](https://jindraregal.com/analyse-bottleneck): summary and FAQ
+
+## Background
+
+- [My AI coding agents got slower. Turns out the mess was mine](https://jindraregal.com/blog/why-ai-coding-agents-are-slow): the author's 43 hours of agent runs, where the model took 16% of the time
+
+## Optional
+
+- [Stack rules](https://github.com/jindraregal/analyse-bottleneck/tree/main/rules): the coded advice as JSON data (Next.js, npm vs pnpm/bun, pip vs uv, jest vs vitest, Docker cache, Playwright and more)
+- [Privacy](https://jindraregal.com/privacy) and [terms](https://jindraregal.com/terms)

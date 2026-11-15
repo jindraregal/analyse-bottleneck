@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.5.9 (2026-11-15)
+
+Clearer descriptions for people and for answer engines, no change to what the skill does.
+
+- README: the first sentence says what the plugin is and for whom; a FAQ with the questions people ask (install, how to run it, why an agent is slow, privacy, quota, other agents, checking a fix, author).
+- `llms.txt`: a short summary with the install commands and links to the docs.
+- `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`: one description shared with the GitHub repository's About; homepage is the project page on jindraregal.com; the author by name.
+- `tests/test_core.py`: the test for personal strings in public files allows the author's name.
+
 ## 0.5.8 (2026-11-13)
 
 The rule files no longer read as commands to catalogue security scanners. skillsdirectory.com graded the skill F (0/100) for phrases in `rules/*.json` that the skill only looks for in transcripts and never runs. Same matches and same reports as 0.5.7.
