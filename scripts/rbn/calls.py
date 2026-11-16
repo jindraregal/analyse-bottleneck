@@ -1,7 +1,7 @@
 """Ledger of every tool call and model turn: how long it lasted and what it likely did.
 
 What it did comes from the description the agent gave the call when there is one, otherwise from
-rules/intents.json. Durations overlap when tools or subagents run in parallel, so they do not sum to
+scripts/rules/intents.json. Durations overlap when tools or subagents run in parallel, so they do not sum to
 wall-clock time; `analyze` is the view that does.
 """
 import csv
@@ -18,7 +18,7 @@ from .util import fmt_dur, iso, match_text, redact, scrub, strip_cd, template_co
 HERE = os.path.dirname(os.path.abspath(__file__))
 STALL_S = 1800.0
 def load_intents(rules_dir=None):
-    path = os.path.join(rules_dir or os.path.join(HERE, "..", "..", "rules"), "intents.json")
+    path = os.path.join(rules_dir or os.path.join(HERE, "..", "rules"), "intents.json")
     with open(path, encoding="utf-8") as f:
         return [(re.compile(r["regex"]), r["text"]) for r in json.load(f)["rules"]]
 

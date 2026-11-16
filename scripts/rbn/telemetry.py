@@ -1,7 +1,7 @@
 """Measured telemetry next to the transcript inference.
 
 Everything here is either read from records the harness wrote (API send times, hook durations),
-printed by a tool about itself (rules/measures.json), or read from an optional external source
+printed by a tool about itself (scripts/rules/measures.json), or read from an optional external source
 (sysstat archives, job records of a wrapper). Each block says where its numbers come from, and
 `coverage()` states per dimension whether the report holds measured data, inference, or nothing.
 """
@@ -120,7 +120,7 @@ def measures(sessions):
         d.update({"id": k, "kind": meta[k][0], "label": meta[k][1]})
         out.append(d)
     out.sort(key=lambda d: -d["sum"])
-    return {"items": out, "basis": "durations printed by the tools themselves (rules/measures.json); only where the output was captured"}
+    return {"items": out, "basis": "durations printed by the tools themselves (scripts/rules/measures.json); only where the output was captured"}
 
 
 # --- activity intervals (for joining external telemetry) -------------------------------------
@@ -379,7 +379,7 @@ def coverage(rep):
 
     rows = [
         row("wall-clock attribution", "measured", "transcript timestamps", "classification of each interval is rule-based"),
-        row("tokens / quota", "measured", "usage fields per request", "unit weights in rules/models.json are an estimate, not price"),
+        row("tokens / quota", "measured", "usage fields per request", "unit weights in scripts/rules/models.json are an estimate, not price"),
         row("API latency", "measured" if lat.get("matched") else "missing", "api-request send records" if lat.get("matched") else "-",
             "first content block, not true TTFT" if lat.get("matched") else "this Claude Code version writes no send records"),
         row("waiting / polling", "measured", "tool call durations", "which call is a poll is inferred from the command"),

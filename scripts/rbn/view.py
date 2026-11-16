@@ -480,7 +480,7 @@ def _action(c, cap_min, before=None):
 
 
 def build_actions(report, rs, cfg, leaf_to, visible, seg_info=None):
-    """Coded findings mapped to slices, then the slice rules (rules/segments.json segment_rules). Savings are
+    """Coded findings mapped to slices, then the slice rules (scripts/rules/segments.json segment_rules). Savings are
     capped at the slice's own time; actions saving under a minute and actions that do not fit their slice are
     dropped; per slice the biggest savings come first."""
     seg_info = seg_info or {}
@@ -720,7 +720,7 @@ def build_view_checked(report, analyses, opts):
             it["short"], it["short_src"] = describe(rs, it.get("what"), it.get("label"), "", sg["id"])
         dedupe(rs, sg["items"])
     view["waiting"] = build_waiting(analyses, rs)
-    # deep dives: a cause with a big share of agent time (deploys) gets a focused second analysis (rules/deepdive.json)
+    # deep dives: a cause with a big share of agent time (deploys) gets a focused second analysis (scripts/rules/deepdive.json)
     dds = deepdive_mod.build_all(rs, analyses, d["leaves"], lambda lf: lf["seg0"] if lf["seg0"] in visible else "other",
                                  agent_s, win, labels)
     shown = {a.get("id") for s in segs for a in s.get("actions") or []}
@@ -753,7 +753,7 @@ def _basis(view, d, report, opts):
              fmt_h((view.get("waiting") or {}).get("seconds", ex[0]["seconds"])), fmt_h((view.get("waiting") or {}).get("parked_s", 0)), fmt_h(ex[1]["seconds"]))},
         {"what": "What exactly", "how": "a wait is shown as what the subagent or background command was doing", "kind": "deterministic",
          "detail": "Commands unwrapped (wrappers, cd, chains) and grouped by signature; labels are the agent's own descriptions. Runs and medians count every run in the window, also runs that overlapped something counted first."},
-        {"what": "Actions", "how": "coded rules in rules/*.json", "kind": "deterministic",
+        {"what": "Actions", "how": "coded rules in scripts/rules/*.json", "kind": "deterministic",
          "detail": "Savings are estimates, capped at the slice's time; each shows its arithmetic and assumption."},
     ]
     if opts.get("dup_records"):
@@ -793,7 +793,7 @@ def _basis(view, d, report, opts):
         rows.append({"what": "Delivery (DORA)", "how": "git history via analyze.py dora", "kind": "measured",
                      "detail": _cut("; ".join(bits) + ". Not part of the chart.", 200)})
     for dd in view.get("deep_dives") or []:
-        rows.append({"what": "Deep dive: %s" % dd["title"].lower(), "how": "triggered by the share of agent time (rules/deepdive.json)", "kind": "deterministic",
+        rows.append({"what": "Deep dive: %s" % dd["title"].lower(), "how": "triggered by the share of agent time (scripts/rules/deepdive.json)", "kind": "deterministic",
                      "detail": _cut("Triggered: %s. Facts are counted from the transcripts; checks read the project's files as they are today, not as they were during the runs. The AI part is a subagent started with the generated brief." % dd["trigger"], 300)})
     rows.append({"what": "AI notes", "how": "none on this page", "kind": "none",
                  "detail": "Everything above is computed. A model may add notes per slice; they are marked AI."})
@@ -832,7 +832,7 @@ def _waited_tool(S, s, e, rs):
 
 def build_waiting(analyses, rs):
     """Time the main sessions waited on a person (excluded from agent time), by kind, with deterministic tips
-    (rules/waiting.json). Each kind: seconds, episodes, median, longest, sessions; for your next message also
+    (scripts/rules/waiting.json). Each kind: seconds, episodes, median, longest, sessions; for your next message also
     how many of those turns ended with a question; for prompts, gates and questions the commands or tools that
     waited most often."""
     import bisect
@@ -898,7 +898,7 @@ def build_waiting(analyses, rs):
 
 
 def _wait_basis(r, p):
-    """(seconds the saving_fraction applies to, how it was counted) for a waiting rule; see rules/waiting.json."""
+    """(seconds the saving_fraction applies to, how it was counted) for a waiting rule; see scripts/rules/waiting.json."""
     b = r.get("saving_basis") or "seconds"
     if b == "questions_s":
         return p["questions_s"], "%s after %d stops that ended with a question" % (fmt_h(p["questions_s"]), p["questions"])

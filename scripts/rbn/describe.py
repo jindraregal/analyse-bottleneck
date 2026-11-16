@@ -1,4 +1,4 @@
-"""Short human names (2-5 words) for 'What exactly' items, from rules/describe.json and the agent's own
+"""Short human names (2-5 words) for 'What exactly' items, from scripts/rules/describe.json and the agent's own
 descriptions. Deterministic: same item, same rules -> same name. No model involved."""
 import re
 

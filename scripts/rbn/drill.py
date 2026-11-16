@@ -494,7 +494,7 @@ def signature(cmd, rs, cls=None):
     status, ls, grep ...) never win when anything else is there, so a poll loop names what it polls; an
     until/while poll is named by its condition ('until [ -f /tmp/vt/DONE ]').
     A poll loop (cls poll_wait) is named by its condition first: 'while pgrep -f deploy; do sleep 15; done; deploy'
-    spent its time in the loop. A deploy part (rules/segments.json deploy_parts) wins unless `cls` is
+    spent its time in the loop. A deploy part (scripts/rules/segments.json deploy_parts) wins unless `cls` is
     build/test/install/media; its class is 'deploy'. Among the rest the first part whose class equals `cls` wins (matched=True), else the part with
     the highest-priority class (matched=False: the whole-command class came from a light part)."""
     cfg = _seg_cfg(rs)

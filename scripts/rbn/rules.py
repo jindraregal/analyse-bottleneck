@@ -1,9 +1,9 @@
-"""Load data-driven rule files from rules/*.json (extensible: drop in more files)."""
+"""Load data-driven rule files from scripts/rules/*.json (extensible: drop in more files)."""
 import json
 import os
 import re
 
-DEFAULT_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "rules")
+DEFAULT_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "rules")   # scripts/rules
 
 
 class RuleSet(object):

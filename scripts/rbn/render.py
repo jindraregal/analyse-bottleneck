@@ -137,5 +137,5 @@ def render(rep, top=8, with_commands=True):
         for r in rep["recurring"]:
             L.append("- %s: in %d of %d sessions" % (r["title"], r["sessions"], r["of"]))
     L.append("")
-    L.append("_Units are weighted token equivalents (rules/models.json), not money. Savings are estimates; see arithmetic lines. Quota items overlap (the same turns can be polling, mechanical and batchable): do not add them up._")
+    L.append("_Units are weighted token equivalents (scripts/rules/models.json), not money. Savings are estimates; see arithmetic lines. Quota items overlap (the same turns can be polling, mechanical and batchable): do not add them up._")
     return "\n".join(L) + "\n"

@@ -371,7 +371,7 @@ def show_median(it):
 
 
 def _short(it):
-    """The item's 2-5 word name (view.py, rules/describe.json); older views fall back to the label."""
+    """The item's 2-5 word name (view.py, scripts/rules/describe.json); older views fall back to the label."""
     return clip(it.get("short") or it.get("label") or it.get("what") or "?", 60)
 
 
@@ -609,7 +609,7 @@ def _waiting_todos(w):
 
 
 def _waiting_panel_html(i, w, cls, hidden):
-    """The hatched 'Waiting for you' slice: tips for you and for the agent (rules/waiting.json), then the kinds of
+    """The hatched 'Waiting for you' slice: tips for you and for the agent (scripts/rules/waiting.json), then the kinds of
     waiting as rows."""
     out = _panel_head(i, w, cls, hidden)
     you, agent, notes = _waiting_todos(w)

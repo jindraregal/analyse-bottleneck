@@ -26,5 +26,5 @@ Run it by asking Claude Code in plain words, for example "use analyse-bottleneck
 
 ## Optional
 
-- [Stack rules](https://github.com/jindraregal/analyse-bottleneck/tree/main/rules): the coded advice as JSON data (Next.js, npm vs pnpm/bun, pip vs uv, jest vs vitest, Docker cache, Playwright and more)
+- [Stack rules](https://github.com/jindraregal/analyse-bottleneck/tree/main/scripts/rules): the coded advice as JSON data (Next.js, npm vs pnpm/bun, pip vs uv, jest vs vitest, Docker cache, Playwright and more)
 - [Privacy](https://jindraregal.com/privacy) and [terms](https://jindraregal.com/terms)

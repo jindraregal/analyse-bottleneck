@@ -27,7 +27,7 @@ Then ask Claude Code: "use analyse-bottleneck on my last 24 hours" (or "on my la
 ## What you get
 
 - **One HTML page**: a donut of agent time by cause plus a "Waiting for you" slice (your next message, permission prompts, approval gates). Pick a slice to see the exact commands behind it.
-- **Ranked fixes** with evidence, before/after commands and estimated savings with the arithmetic shown. They come from stack rules kept as data in `rules/*.json` (Next.js, npm vs pnpm/bun, pip vs uv, jest vs vitest, Docker cache, Playwright and more; add your own with `--extra-rules DIR`).
+- **Ranked fixes** with evidence, before/after commands and estimated savings with the arithmetic shown. They come from stack rules kept as data in `scripts/rules/*.json` (Next.js, npm vs pnpm/bun, pip vs uv, jest vs vitest, Docker cache, Playwright and more; add your own with `--extra-rules DIR`).
 - **Quota and environment signals**: cache hit rate, oversized tool outputs, repeated reads, sleep polling; disk full, OOM, timeouts, rate limits and retry loops from tool output.
 - **`compare`** of two windows or sessions, to check that a fix helped. More commands (`calls`, `dora`, an opt-in `watch` hook) are in [SKILL.md](SKILL.md).
 

@@ -1,7 +1,7 @@
 {
   "name": "analyse-bottleneck",
   "displayName": "Analyse Bottleneck",
-  "version": "0.5.9",
+  "version": "0.5.10",
   "description": "Shows where the time and quota of your Claude Code agent runs went (tests, builds, deploys, polling, model time, waiting for you), from local transcripts, with ranked fixes.",
   "author": {
     "name": "Jindra Regál",

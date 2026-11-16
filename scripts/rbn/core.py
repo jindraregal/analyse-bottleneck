@@ -499,7 +499,7 @@ def build_report(analyses, rs, opts, args_ns=None):
     report = {
         "meta": {"tool": "analyse-bottleneck", "version": __version__, "sessions": len(analyses), "rules_warnings": rs.warnings,
                  "project_checks": sorted(skipped.values(), key=lambda k: -k["seconds"]),
-                 "weights_note": "units = weighted input-token equivalents (see rules/models.json); a comparison device, not money",
+                 "weights_note": "units = weighted input-token equivalents (see scripts/rules/models.json); a comparison device, not money",
                  "honesty": ["Transcripts hold no CPU/memory telemetry: machine signals are inferred unless --sysstat or --machine-log supplies measurements (see telemetry.coverage).",
                              "Permission waits are inferred from unusually slow instant tools; human waits come from gaps before human prompts.",
                              "Savings are estimates with stated arithmetic and assumptions, not measurements."]},

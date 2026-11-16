@@ -1,4 +1,4 @@
-"""Deep dives (deepdive.py, rules/deepdive.json): trigger, facts, checks on disk, tips, brief, page. Synthetic data only."""
+"""Deep dives (deepdive.py, scripts/rules/deepdive.json): trigger, facts, checks on disk, tips, brief, page. Synthetic data only."""
 import os
 import re
 import sys

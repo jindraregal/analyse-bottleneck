@@ -1,6 +1,6 @@
 """Deep dives: when one cause (deploys) takes a big share of agent time, a focused second analysis runs.
 
-The deterministic part runs here, inside `view`, every time the trigger fires (rules/deepdive.json):
+The deterministic part runs here, inside `view`, every time the trigger fires (scripts/rules/deepdive.json):
   * which agent time belongs to the cause, across every slice (a deploy is often waited on in 'Sleep/poll loops'
     and checked in 'Network, git & APIs', not only run in 'Deploys'),
   * episodes (one deploy and the calls around it), how they were waited on, how often they came back to back,
@@ -392,7 +392,7 @@ def build_all(rs, analyses, leaves, seg_of, agent_s, win, labels=None):
 
 
 def render_brief(dd, rs, view):
-    """The subagent's prompt for one deep dive (rules/deepdive.json 'brief', filled with the computed facts)."""
+    """The subagent's prompt for one deep dive (scripts/rules/deepdive.json 'brief', filled with the computed facts)."""
     raw = next((r for r in getattr(rs, "deepdive", None) or [] if isinstance(r, dict) and r.get("id") == dd["id"]), None)
     lines = (raw or {}).get("brief") or []
     w = view.get("window") or {}

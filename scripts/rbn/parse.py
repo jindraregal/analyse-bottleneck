@@ -91,7 +91,7 @@ def scan_signals(rs, text, tool, cmd, is_error):
 
 
 def scan_measures(S, rs, text, t, ts):
-    """Durations the tool printed about itself (rules/measures.json). Bounded slice, at most 5 hits per rule."""
+    """Durations the tool printed about itself (scripts/rules/measures.json). Bounded slice, at most 5 hits per rule."""
     if len(text) > SCAN_HEAD + SCAN_TAIL:
         text = text[:SCAN_HEAD] + "\n" + text[-SCAN_TAIL:]
     for m in rs.measures:

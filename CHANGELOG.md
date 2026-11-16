@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.10 (2026-11-16)
+
+The rule files moved from `rules/` to `scripts/rules/`, so the skill folder holds only what the Agent Skills layout knows (`SKILL.md`, `scripts/`). Catalogues that package only those folders now get the rules too. Same rules, same matches, same reports.
+
+- `scripts/rules/*.json`: moved unchanged. `--rules-dir`, `RB_RULES_DIR` and `--extra-rules` work as before; only the default location changed.
+- `SKILL.md`, README, help texts and report notes name the new path.
+- `tests/test_manifest.py`: the scanner phrase check reads the new folder.
+
 ## 0.5.9 (2026-11-15)
 
 Clearer descriptions for people and for answer engines, no change to what the skill does.
