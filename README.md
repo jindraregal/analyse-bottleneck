@@ -2,6 +2,8 @@
 
 **analyse-bottleneck is a free, open-source Claude Code plugin that reads your local Claude Code transcripts and shows where the time and quota of your agent runs went (tests, builds, deploys, polling, model time, waiting for you), with ranked fixes.**
 
+**In the author's own 43 hours of agent runs, the model took 16% of the time.** Tests, scripts, polling and deploys took most of the rest. Two of the fixes it found, now live: a worker image build went from 20-24 minutes to under one, and a test run while fixing from 19 minutes to 35 seconds ([write-up](https://jindraregal.com/blog/why-ai-coding-agents-are-slow)).
+
 For developers who run long or autonomous Claude Code sessions and want the next run to be faster and cheaper. MIT licensed, runs locally, made by Jindra Regál. Project page: [jindraregal.com/analyse-bottleneck](https://jindraregal.com/analyse-bottleneck).
 
 ## Install
@@ -22,20 +24,16 @@ claude plugin install analyse-bottleneck@jindraregal
 
 Then ask Claude Code: "use analyse-bottleneck on my last 24 hours" (or "on my last 7 days", "on this session"). Needs Python 3.8+, standard library only.
 
+## What you get
+
+- **One HTML page**: a donut of agent time by cause plus a "Waiting for you" slice (your next message, permission prompts, approval gates). Pick a slice to see the exact commands behind it.
+- **Ranked fixes** with evidence, before/after commands and estimated savings with the arithmetic shown. They come from stack rules kept as data in `rules/*.json` (Next.js, npm vs pnpm/bun, pip vs uv, jest vs vitest, Docker cache, Playwright and more; add your own with `--extra-rules DIR`).
+- **Quota and environment signals**: cache hit rate, oversized tool outputs, repeated reads, sleep polling; disk full, OOM, timeouts, rate limits and retry loops from tool output.
+- **`compare`** of two windows or sessions, to check that a fix helped. More commands (`calls`, `dora`, an opt-in `watch` hook) are in [SKILL.md](SKILL.md).
+
 ## How it works
 
 It reads the transcripts Claude Code already writes to `~/.claude/projects`, streaming (a few hundred MB take seconds). About 90% of the work is plain Python: every second of wall-clock time goes to exactly one cause, parallel tools and subagents are never double counted, and waits on subagents and background tasks are resolved to what they were doing. The model only reads a compact brief (<= 60 lines) and adds judgement, so it is cheap on a tight weekly quota.
-
-## What you get
-
-- **One HTML page** (`view`): a donut of agent time by cause plus a "Waiting for you" slice (your next message, permission prompts, approval gates), with ranked "Do this" fixes and the exact commands behind each slice.
-- **Ranked fixes** with evidence, before/after commands and estimated savings with the arithmetic shown.
-- **Environment signals** from tool output: disk full, OOM, timeouts, rate limits (429), overload (529), retry loops, each with a confidence label.
-- **Quota waste**: cache hit rate and rebuilds, oversized tool outputs, repeated reads and commands, sleep polling, top-tier model on mechanical turns.
-- **Stack rules** as data in `rules/*.json`: Next.js, npm vs pnpm/bun, pip vs uv, jest vs vitest, tsc incremental, Docker cache, Playwright reruns, ffmpeg, whisper and more. Add your own with `--extra-rules DIR`.
-- **Deep dives** when one cause dominates (today: deploys), with checks of the project's files on disk.
-- **Other commands**: `calls` (every tool call and model turn), `compare` (two windows or sessions, to prove a fix helped), `dora` (delivery metrics from git and exported CI runs), `watch` (opt-in, non-blocking Stop hook; never installed for you).
-- **A coverage matrix** saying which numbers are measured, inferred or missing. Optional `--sysstat`, `--jobs` and `scripts/sample_machine.py` turn inferred machine signals into measurements.
 
 ## Example (synthetic data)
 
@@ -61,9 +59,17 @@ python3 $S/analyze.py compare --project my-app --before "2026-10-01..2026-10-10"
 
 Full options and the model's flow are in [SKILL.md](SKILL.md); changes per version in [CHANGELOG.md](CHANGELOG.md).
 
-## Limits and privacy
+## Known limits
 
-Transcripts hold no CPU, memory or disk telemetry, so machine signals are inferred unless you pass measurements. Savings are estimates with stated assumptions you can edit in the rules. Everything runs locally: no network calls, no credentials read, nothing uploaded. Reports go to `~/.local/share/analyse-bottleneck/reports/`, outside any git checkout.
+- **Claude Code only.** It reads Claude Code's transcript format, not Codex, Cursor or other agents.
+- **No machine telemetry in transcripts.** CPU, memory and disk pressure are inferred from tool output unless you pass measurements (`--sysstat`, `--jobs`, `scripts/sample_machine.py`). A coverage matrix in the report says which numbers are measured, inferred or missing.
+- **Savings are estimates.** Each one shows its arithmetic and assumptions, which you can edit in the rules. Only `compare` after the change measures the real gain.
+- **Some waiting stays unexplained.** When a wait cannot be traced to a command, it is shown as "Waiting — cause unknown" instead of guessed.
+- **Deep dives cover deploys only** for now (they start when deploys take at least 10% of agent time).
+
+## Privacy
+
+Everything runs locally: no network calls, no credentials read, nothing uploaded. Reports go to `~/.local/share/analyse-bottleneck/reports/`, outside any git checkout.
 
 ## FAQ
 
